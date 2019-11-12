@@ -3,7 +3,7 @@ from torch import optim
 import torch.nn as nn
 import torchvision as tv
 from torchvision import transforms
-
+import copy
 from models import fcn, unet, pspnet, dfn
 from datasets.voc import to_rgb
 import torch.backends.cudnn as cudnn
@@ -100,7 +100,129 @@ class Trainer:
         if USE_NSML:        #non lo uso 
             self.viz = Visdom(visdom=visdom)
 
+
+
     def train_val(self):
+        since = time.time()
+        iters_per_epoch = len(self.train_data_loader.dataset) // self.cfg.train_batch_size      #divisione tenendo interi
+        if len(self.train_data_loader.dataset) % self.cfg.train_batch_size != 0:
+            iters_per_epoch += 1
+        epoch = 0
+        #iters_per_epoch=25
+
+        print('batch size {}\t'
+                      'dataset size : [{}]\t'
+                      'epoch : [{}]\t'
+                      'iterations : {}\t'.format(
+                          self.cfg.train_batch_size,len(self.train_data_loader.dataset),iters_per_epoch,
+                      len(self.train_data_loader.dataset) // self.cfg.train_batch_size
+                      ))
+        best_model_wts = copy.deepcopy(self.model.state_dict())
+        best_loss = 1e10
+        data_iter = iter(self.train_data_loader)
+        val_data_iter = iter(self.val_data_loader)         
+
+        for epoch in range(iters_per_epoch):    #numero di barchs
+            print('Epoch {}/{}'.format(epoch, iters_per_epoch - 1))
+            print('-' * 10)
+
+            # Each epoch has a training and validation phase
+            for phase in ['train', 'val']:
+                if phase == 'train':
+                    self.scheduler.step()
+                    self.model.train()  # Set model to training mode
+                else:
+                    self.model.eval()   # Set model to evaluate mode
+
+                running_loss = 0.0
+                running_corrects = 0
+
+                # Iterate over data.
+                batch_size =  self.cfg.train_batch_size   #10
+
+                for I in range(batch_size):     #da 0 alla dimensione di un barch
+                    try:
+                        if phase == 'train':
+                            input_images, target_masks = next(data_iter)     #passa il prossimo elemento dall'iteratore, input=immagine e target=mask
+                        elif phase == 'val':
+                            input_images, target_masks = next(val_data_iter)
+                    except:
+                        if phase == 'train':
+                            data_iter = iter(self.train_data_loader)
+                            input_images, target_masks = next(data_iter)
+                        elif phase == 'val':
+                            val_data_iter = iter(self.val_data_loader)         
+                            input_images, target_masks = next(val_data_iter)
+
+                    inputs = input_images.to(self.device)
+                    labels = target_masks.to(self.device)                
+
+                    # zero the parameter gradients
+                    self.reset_grad()  
+
+                    # forward
+                    # track history if only in train
+                    with torch.set_grad_enabled(phase == 'train'):
+                        outputs = self.model(inputs)
+                        loss = self.c_loss(outputs, labels)
+
+                        # backward + optimize only if in training phase
+                        if phase == 'train':
+                            loss.backward()
+                            self.optim.step()
+
+                    # statistics
+                    running_loss += loss.item() * inputs.size(0)
+                    _, output_label = torch.max(outputs, dim=1) #argmax
+                    running_corrects += torch.sum(output_label == labels)
+                    if (I + 1) % self.cfg.log_step == 0:
+                        seconds = time.time() - since        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
+                        elapsed = str(timedelta(seconds=seconds))
+                        print('Iteration : [{iter}/{iters}]\t'
+                            'Time : {time}\t'
+                            'Running Correct : {corr}\t'
+                            'Loss : {loss:.4f}\t'.format(
+                            iter=I+1, iters=self.cfg.n_iters, 
+                            time=elapsed, corr=running_corrects, loss=loss.item())) 
+                
+                    #plt.imshow(tv.utils.make_grid(input))      #aggiunto
+                    plt.imshow(tv.utils.make_grid(input_images, nrow=5).permute(1, 2, 0))
+                    #plt.imshow(input_images, cmap='gray') # I would add interpolation='none'
+
+                    
+                    plt.imshow(target_masks, cmap='jet', alpha=0.5) # interpolation='none'
+
+                epoch_loss = running_loss / (batch_size * iters_per_epoch)
+
+                print('{} Loss: {:.4f}'.format(
+                    phase, epoch_loss))
+
+                # deep copy the model
+                if phase == 'val' and epoch_loss < best_loss:
+                    best_loss = epoch_loss
+                    #best_model_wts = copy.deepcopy(self.model.state_dict())
+
+        time_elapsed = time.time() - since
+        print('Training complete in {:.0f}m {:.0f}s'.format(
+            time_elapsed // 60, time_elapsed % 60))
+        print('Best val loss: {:4f}'.format(best_loss))
+
+        # load best model weights
+        self.model.load_state_dict(best_model_wts)
+
+
+
+
+
+
+
+
+
+
+
+        
+
+    def trains_val(self):
 
         best_acc = 0.0
         running_loss=0.0
@@ -116,8 +238,8 @@ class Trainer:
         print('batch size {}\t'
                       'dataset size : [{}]\t'
                       'epoch : [{}]\t'
-                      'datasetTime // batch : {}\t'.format(
-                          self.cfg.train_batch_size,iters_per_epoch,len(self.train_data_loader.dataset), 
+                      'datase sime // batch : {}\t'.format(
+                          self.cfg.train_batch_size,len(self.train_data_loader.dataset),iters_per_epoch,
                       len(self.train_data_loader.dataset) // self.cfg.train_batch_size
                       ))
 
@@ -134,49 +256,52 @@ class Trainer:
                 data_iter = iter(self.train_data_loader)
                 input, target = next(data_iter)
 
-            input_var = input.clone().to(self.device)       #copiamo l'immagine nel device, che sarebbe la GPU
-            target_var = target.to(self.device)             #prendiamo la maschera e la mettiamo indevice
-            output = self.model(input_var)          #ora l'output diventa l'immagine
-            #print( output.view(output.size(0), output.size(1), -1))#
-            #print(target_var.view(target_var.size(0), -1))#
-            loss = self.c_loss(output, target_var)      #loss sarebbe la Cross Entropy loss tra l'immagine e la mask
+            
+            inputs = input.to(self.device)
+            targets= target.to(self.device)
 
-            self.reset_grad()           #resetta il gradiente
-            loss.backward()         #va indietro del loss
-            self.optim.step()   #update i parametri dopo l'ottimizzazione
+            self.reset_grad()     
+                                                         #input_var = input.clone().to(self.device)       #copiamo l'immagine nel device, che sarebbe la GPU
+                                                        #target_var = target.to(self.device)             #prendiamo la maschera e la mettiamo indevice
+            output = self.model(inputs)                 #ora l'output diventa l'immagine
+                                                        #print( output.view(output.size(0), output.size(1), -1))#
+                                                        #print(target_var.view(target_var.size(0), -1))#
+            output_label = torch.argmax(output, dim=1)#
+            loss = self.c_loss(output, targets)         #loss sarebbe la Cross Entropy loss tra l'immagine e la mask
+                                    #resetta il gradiente
+            loss.backward()                               #va indietro del loss
+            self.optim.step()                           #update i parametri dopo l'ottimizzazione
+
             print('Done')#
 
-            _, output_label = torch.max(output, 1)#
+            running_loss += loss.item() * inputs.size(0)
+            running_corrects += torch.sum(output_label == targets)
 
-            running_loss += loss.item() * input_var.size(0)
-            running_corrects += torch.sum(output_label == target_var)
-
-            epoch_loss = running_loss / iters_per_epoch
 
             if (n_iter + 1) % self.cfg.log_step == 0:
                 seconds = time.time() - train_start_time        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                 elapsed = str(timedelta(seconds=seconds))
                 print('Iteration : [{iter}/{iters}]\t'
                       'Time : {time}\t'
-                      'epoch loss : {losss}\t'
                       'Running Correct : {corr}\t'
                       'Loss : {loss:.4f}\t'.format(
                       iter=n_iter+1, iters=self.cfg.n_iters, 
-                      time=elapsed,  losss=epoch_loss, corr=running_corrects, loss=loss.item()))          #controlla questo loss.item
-
-            
-        
+                      time=elapsed, corr=running_corrects, loss=loss.item()))          #controlla questo loss.item
 
             if (n_iter + 1) % iters_per_epoch == 0:     
                 self.validate(epoch)                #se abbiamo finito un'epoca, validiamola e cambiamo epoca
                 epoch += 1              #incrementiamo
 
+        epoch_loss = running_loss / iters_per_epoch
+        epoch_acc = running_corrects.double() / output.shape[0]
+        print('epoch loss : {losss:.4f}\t'
+                      'Loss : {loss:.4f}\t'.format(losss=epoch_loss, loss=loss.item()))  
+
 
     def validate(self, epoch):      
-
+        self.model.eval()                   #controlla EVAL
         running_corrects=0.0
-        running_loss=0.0
-        self.model.eval()                                                #controlla EVAL
+        running_loss=0.0                                            
         val_start_time = time.time()                                     #prendiamo il tempo
         data_iter = iter(self.val_data_loader)                           #iteriamo su data_loader
         max_iter = len(self.val_data_loader)                            #prendiamo la dimensione
@@ -200,11 +325,11 @@ class Trainer:
         loss = self.c_loss(output, target_var)                  #come prima
 
         output_label = torch.argmax(_output, dim=1)     #aggiunto
-        #imshow(tv.utils.make_grid(input))      #aggiunto
+        plt.imshow(tv.utils.make_grid(input))      #aggiunto
 
 
         running_loss += loss.item() * input_var.size(0)
-        running_corrects += torch.sum(output_label == target_var)
+        running_corrects += torch.sum(output_label == target)
         epoch_loss = running_loss / max_iter
 
         if (n_iter + 1) % self.cfg.log_step == 0:               #controlla questo LOG_STEP
@@ -217,7 +342,7 @@ class Trainer:
                 'Running Correct : {corr}\t'
                 'Loss : {loss:.4f}\t'.format(
                       iter=n_iter+1, iters=self.cfg.n_iters, 
-                      time=elapsed,  losss=epoch_loss, corr=running_corrects loss=loss.item()))
+                      time=elapsed,  losss=epoch_loss, corr=running_corrects, loss=loss.item()))
   
 
         if USE_NSML:                            #non lo usiamo
