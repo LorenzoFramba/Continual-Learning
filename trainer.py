@@ -88,7 +88,7 @@ class Trainer:
         # Poly learning rate policy
         lr_lambda = lambda n_iter: (1 - n_iter/self.cfg.n_iters)**self.cfg.lr_exp       #ATTENZIONE: learning rate LAMBDA penso
         self.scheduler = LambdaLR(self.optim, lr_lambda=lr_lambda)
-        self.c_loss = nn.CrossEntropyLoss().to(self.device)         #crossEntropy
+        self.c_loss = nn.CrossEntropyLoss().to(self.device)         #crossEntropy ! muove il modello nella GPU
         self.softmax = nn.Softmax(dim=1).to(self.device) # channel-wise softmax             #facciamo il softmax, cioe' prendiamo tutte le probabilita' e facciamo in modo che la loro somma sia 1
 
         self.n_gpu = torch.cuda.device_count()          #ritorna il numero di GPU a disposizione
@@ -102,8 +102,9 @@ class Trainer:
 
     def train_val(self):
 
-
-        
+        best_acc = 0.0
+        running_loss=0.0
+        running_corrects=0.0
 
         # Compute epoch's step size
         iters_per_epoch = len(self.train_data_loader.dataset) // self.cfg.train_batch_size      #divisione
@@ -145,17 +146,26 @@ class Trainer:
             self.optim.step()   #update i parametri dopo l'ottimizzazione
             print('Done')#
 
-            #output_label = torch.argmax(_output, dim=1)#
+            _, output_label = torch.max(output, 1)#
+
+            running_loss += loss.item() * input_var.size(0)
+            running_corrects += torch.sum(output_label == target_var)
+
+            epoch_loss = running_loss / iters_per_epoch
 
             if (n_iter + 1) % self.cfg.log_step == 0:
                 seconds = time.time() - train_start_time        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                 elapsed = str(timedelta(seconds=seconds))
                 print('Iteration : [{iter}/{iters}]\t'
                       'Time : {time}\t'
+                      'epoch loss : {losss}\t'
+                      'Running Correct : {corr}\t'
                       'Loss : {loss:.4f}\t'.format(
-                      iter=n_iter+1, iters=self.cfg.n_iters,
-                      time=elapsed, loss=loss.item()))          #controlla questo loss.item
-                
+                      iter=n_iter+1, iters=self.cfg.n_iters, 
+                      time=elapsed,  losss=epoch_loss, corr=running_corrects, loss=loss.item()))          #controlla questo loss.item
+
+            
+        
 
             if (n_iter + 1) % iters_per_epoch == 0:     
                 self.validate(epoch)                #se abbiamo finito un'epoca, validiamola e cambiamo epoca
@@ -164,40 +174,51 @@ class Trainer:
 
     def validate(self, epoch):      
 
+        running_corrects=0.0
+        running_loss=0.0
         self.model.eval()                                                #controlla EVAL
         val_start_time = time.time()                                     #prendiamo il tempo
         data_iter = iter(self.val_data_loader)                           #iteriamo su data_loader
         max_iter = len(self.val_data_loader)                            #prendiamo la dimensione
-        for n_iter in range(max_iter):
-            self.scheduler.step()
-            try:
-                input, target = next(data_iter)     #passa il prossimo elemento dall'iteratore, input=immagine e target=mask
-            except:
-                data_iter = iter(self.train_data_loader)
-                input, target = next(data_iter)
-            #n_iter =  0
+        #for n_iter in range(max_iter):#FIXME
+        #self.scheduler.step()
+        try:
+            input, target = next(data_iter)     #passa il prossimo elemento dall'iteratore, input=immagine e target=mask
+        except:
+            data_iter = iter(self.train_data_loader)
+            input, target = next(data_iter)
+        n_iter =  0
             #input, target = next(data_iter)                         #andiamo avanti nell'iteratore
 
-            input_var = input.clone().to(self.device)               #copiamo in device (GPU) input_var
-            target_var = target.to(self.device)                 #copiamo la maschera in device
+        input_var = input.clone().to(self.device)               #copiamo in device (GPU) input_var
+        target_var = target.to(self.device)                 #copiamo la maschera in device
 
-            output = self.model(input_var)                      #l'output diventa l'immagine (PENSO)
-            _output = output.clone()                   
-            output = output.view(output.size(0), output.size(1), -1)
-            target_var = target_var.view(target_var.size(0), -1)
-            loss = self.c_loss(output, target_var)                  #come prima
+        output = self.model(input_var)                      #l'output diventa l'immagine (PENSO)
+        _output = output.clone()                   
+        output = output.view(output.size(0), output.size(1), -1)
+        target_var = target_var.view(target_var.size(0), -1)
+        loss = self.c_loss(output, target_var)                  #come prima
 
-            output_label = torch.argmax(_output, dim=1)     #aggiunto
-            #imshow(tv.utils.make_grid(input))      #aggiunto
-            if (n_iter + 1) % self.cfg.log_step == 0:               #controlla questo LOG_STEP
-                seconds = time.time() - val_start_time                  #tempo trascorso per validare
-                elapsed = str(timedelta(seconds=seconds))
-                print('### Validation\t'
-                      'Iteration : [{iter}/{iters}]\t'
-                    'Time : {time:}\t'
-                    'Loss : {loss:.4f}\t'.format(
-                    iter=n_iter+1, iters=max_iter,
-                    time=elapsed, loss=loss.item()))
+        output_label = torch.argmax(_output, dim=1)     #aggiunto
+        #imshow(tv.utils.make_grid(input))      #aggiunto
+
+
+        running_loss += loss.item() * input_var.size(0)
+        running_corrects += torch.sum(output_label == target_var)
+        epoch_loss = running_loss / max_iter
+
+        if (n_iter + 1) % self.cfg.log_step == 0:               #controlla questo LOG_STEP
+            seconds = time.time() - val_start_time                  #tempo trascorso per validare
+            elapsed = str(timedelta(seconds=seconds))
+            print('### Validation\t'
+                  'Iteration : [{iter}/{iters}]\t'
+                'Time : {time:}\t'
+                'epoch loss : {losss}\t'
+                'Running Correct : {corr}\t'
+                'Loss : {loss:.4f}\t'.format(
+                      iter=n_iter+1, iters=self.cfg.n_iters, 
+                      time=elapsed,  losss=epoch_loss, corr=running_corrects loss=loss.item()))
+  
 
         if USE_NSML:                            #non lo usiamo
             ori_pic = self.denorm(input_var[0:4])
