@@ -104,6 +104,7 @@ class Trainer:
 
     def train_val(self):
         since = time.time()
+        torch.cuda.synchronize()
         iters_per_epoch = len(self.train_data_loader.dataset) // self.cfg.train_batch_size      #divisione tenendo interi
         if len(self.train_data_loader.dataset) % self.cfg.train_batch_size != 0:
             iters_per_epoch += 1
@@ -126,8 +127,8 @@ class Trainer:
             print('Epoch {}/{}'.format(epoch, iters_per_epoch - 1))
             print('-' * 10)
 
-            # Each epoch has a training and validation phase
-            for phase in ['train', 'val']:
+                                            
+            for phase in ['train', 'val']:  # ogni epoca ha una fase di training e val
                 if phase == 'train':
                     self.scheduler.step()
                     self.model.train()  # Set model to training mode
@@ -140,7 +141,7 @@ class Trainer:
                 # Iterate over data.
                 batch_size =  self.cfg.train_batch_size   #10
 
-                for I in range(batch_size):     #da 0 alla dimensione di un barch
+                for I in range(iters_per_epoch):     #da I batch AL NUMERO DI BATCH PRESENTI
                     try:
                         if phase == 'train':
                             input_images, target_masks = next(data_iter)     #passa il prossimo elemento dall'iteratore, input=immagine e target=mask
@@ -157,23 +158,23 @@ class Trainer:
                     inputs = input_images.to(self.device)
                     labels = target_masks.to(self.device)                
 
-                    # zero the parameter gradients
-                    self.reset_grad()  
+                   
+                    self.reset_grad()   # resettiamo i  gradients
 
-                    # forward
-                    # track history if only in train
+                    
+                    
                     with torch.set_grad_enabled(phase == 'train'):
                         outputs = self.model(inputs)
                         loss = self.c_loss(outputs, labels)
 
-                        # backward + optimize only if in training phase
-                        if phase == 'train':
+                    
+                        if phase == 'train':        #indietro e ottimimzziamo
                             loss.backward()
                             self.optim.step()
 
                     # statistics
                     running_loss += loss.item() * inputs.size(0)
-                    _, output_label = torch.max(outputs, dim=1) #argmax
+                    _, output_label = torch.argmax(outputs, dim=1) #argmax
                     running_corrects += torch.sum(output_label == labels)
                     if (I + 1) % self.cfg.log_step == 0:
                         seconds = time.time() - since        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
@@ -184,13 +185,18 @@ class Trainer:
                             'Loss : {loss:.4f}\t'.format(
                             iter=I+1, iters=self.cfg.n_iters, 
                             time=elapsed, corr=running_corrects, loss=loss.item())) 
-                
-                    #plt.imshow(tv.utils.make_grid(input))      #aggiunto
-                    plt.imshow(tv.utils.make_grid(input_images, nrow=5).permute(1, 2, 0))
+
+
+                    #grid = tv.utils.make_grid(input_images,nrow=16)
+                    tv.utils.save_image(input_images,"pippo.jpg")
+                    print('label:',target_masks)
+               # plt.imshow(tv.utils.make_grid(input_images.to_rgb()))      #aggiunto
+                    #plt.imshow(tv.utils.make_grid(input_images[I].permute(1, 2, 0)))
+                    #input_images.permute(1, 2, 0)
                     #plt.imshow(input_images, cmap='gray') # I would add interpolation='none'
 
-                    
-                    plt.imshow(target_masks, cmap='jet', alpha=0.5) # interpolation='none'
+
+                   # plt.imshow(target_masks, cmap='jet', alpha=0.5) # interpolation='none'
 
                 epoch_loss = running_loss / (batch_size * iters_per_epoch)
 
