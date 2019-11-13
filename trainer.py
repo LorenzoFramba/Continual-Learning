@@ -141,7 +141,7 @@ class Trainer:
                 # Iterate over data.
                 batch_size =  self.cfg.train_batch_size   #10
 
-                for I in range(iters_per_epoch):     #da I batch AL NUMERO DI BATCH PRESENTI
+                for I in range(1):     #da I batch AL NUMERO DI BATCH PRESENTI
                     try:
                         if phase == 'train':
                             input_images, target_masks = next(data_iter)     #passa il prossimo elemento dall'iteratore, input=immagine e target=mask
@@ -174,7 +174,8 @@ class Trainer:
 
                     # statistics
                     running_loss += loss.item() * inputs.size(0)
-                    _, output_label = torch.argmax(outputs, dim=1) #argmax
+                    output_label = torch.argmax(outputs, dim=1) #argmax
+                    print(output_label.shape)
                     running_corrects += torch.sum(output_label == labels)
                     if (I + 1) % self.cfg.log_step == 0:
                         seconds = time.time() - since        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
@@ -188,7 +189,7 @@ class Trainer:
 
 
                     #grid = tv.utils.make_grid(input_images,nrow=16)
-                    tv.utils.save_image(input_images,"pippo.jpg")
+                    tv.utils.save_image(to_rgb(output_label.cpu()),"pippo.jpg")
                     print('label:',target_masks)
                # plt.imshow(tv.utils.make_grid(input_images.to_rgb()))      #aggiunto
                     #plt.imshow(tv.utils.make_grid(input_images[I].permute(1, 2, 0)))
@@ -207,6 +208,7 @@ class Trainer:
                 if phase == 'val' and epoch_loss < best_loss:
                     best_loss = epoch_loss
                     #best_model_wts = copy.deepcopy(self.model.state_dict())
+                #self.save_model()
 
         time_elapsed = time.time() - since
         print('Training complete in {:.0f}m {:.0f}s'.format(

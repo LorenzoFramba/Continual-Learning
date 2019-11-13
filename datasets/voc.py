@@ -85,7 +85,7 @@ def to_rgb(xs):
         for j in range(22):
             expand_np_x[np.where(flatten_np_x == j)] = palette[j]
         rgbs[i] = expand_np_x.reshape(H, W, 3)
-    rgbs = rgbs.transpose(0, 3, 1, 2)
+    rgbs = torch.from_numpy(rgbs.transpose(0, 3, 1, 2))
     return rgbs
 
 def make_path(root):                #prende le imagini e le maschere e le unisce in un'unico item. 
