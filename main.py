@@ -18,7 +18,7 @@ def get_loader(config):
         #root = os.path.join(config.path, 'train')
         transform = transforms.Compose([                        #unisce varie trasformazioni assieme
                 transforms.Pad(10),                     #crea un paddig
-                transforms.CenterCrop((config.h_image_size, config.w_image_size)),      #fa crop al centro, ma di quanto?? 
+                transforms.CenterCrop((config.h_image_size, config.w_image_size)),      #fa crop al centro, ma di quanto??
                 transforms.ToTensor(),  #trasforma l'immagine in tensor ( con C x H x W, cioe Channels, Height and Width)
                 transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))  #normalizza il tensor nella media e deviazione standard
         ])
@@ -93,6 +93,10 @@ if __name__ == '__main__':
     parser.add_argument('--val_step', type=int, default=1000)
     parser.add_argument('--model_save_step', type=int, default=10, help='Saving epoch')
     parser.add_argument('--sample_save_step', type=int, default=10, help='Saving epoch')
+    parser.add_argument('--continue_train', action='store_true',
+                             help='continue training: load the latest model')
+    parser.add_argument('--which_epoch', type=str, default='latest',
+                             help='which epoch to load? set to latest to use latest cached model')
 
     # MISC
 
