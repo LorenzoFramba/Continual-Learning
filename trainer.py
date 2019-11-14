@@ -3,7 +3,6 @@ from torch import optim
 import torch.nn as nn
 import torchvision as tv
 from torchvision import transforms
-import copy
 from models import fcn, unet, pspnet, dfn
 from datasets.voc import to_rgb
 import torch.backends.cudnn as cudnn
@@ -13,7 +12,6 @@ import numpy as np
 import os, sys
 import time
 from datetime import timedelta
-import visdom
 
 try:
     import nsml
@@ -140,9 +138,8 @@ class Trainer:
             print('Use data parallel model(# gpu: {})'.format(self.n_gpu))
             self.model = nn.DataParallel(self.model)        #implementa il parallelismo, se disponibile
         self.model = self.model.to(self.device)
-
-        if USE_NSML:        #non lo uso
-            self.viz = Visdom(visdom=visdom)
+        if self.device == "cuda":
+            torch.backends.cudnn.benchmark = True
 
 
 
@@ -150,104 +147,60 @@ class Trainer:
         best_loss = 100000000.0
         since = time.time()
         iters_per_epoch = len(self.train_data_loader.dataset) // self.cfg.train_batch_size      #divisione tenendo interi
-        if len(self.train_data_loader.dataset) % self.cfg.train_batch_size != 0:
-            iters_per_epoch += 1
         epoch = self.start_epoch
 
         print(f"batch size {self.cfg.train_batch_size} dataset size : [{len(self.train_data_loader.dataset)}]"
               f" epoch : [{self.cfg.n_iters}]"
               f" iterations per epoch: {iters_per_epoch}")
         data_iter = iter(self.train_data_loader)
-        val_data_iter = iter(self.val_data_loader)
 
         for epoch in range(self.cfg.n_iters):    #numero di barchs
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
             print('-' * 10)
-
-
-            for phase in ['train', 'val']:  # ogni epoca ha una fase di training e val
-                if phase == 'train':
-                    self.scheduler.step()
-                    self.model.train()  # Set model to training mode
-                else:
-                    self.model.eval()   # Set model to evaluate mode
-
-                if phase == 'train':
-                    running_loss = 0.0
-                    running_corrects = 0
-                    total_train = 0
-                    correct_train =0
-                # Iterate over data.
-                batch_size =  self.cfg.train_batch_size   #10
-                minbatch = None
-                if phase =='train':
-                    minbatch=iters_per_epoch
-                else:
-                    minbatch = len(self.val_data_loader.dataset) // self.cfg.val_batch_size
-                for I in range(minbatch):     #da I batch AL NUMERO DI BATCH PRESENTI
-                    try:
-                        if phase == 'train':
-                            input_images, target_masks = next(data_iter)     #passa il prossimo elemento dall'iteratore, input=immagine e target=mask
-                        elif phase == 'val':
-                            input_images, target_masks = next(val_data_iter)
-                    except:
-                        if phase == 'train':
-                            data_iter = iter(self.train_data_loader)
-                            input_images, target_masks = next(data_iter)
-                        elif phase == 'val':
-                            val_data_iter = iter(self.val_data_loader)
-                            input_images, target_masks = next(val_data_iter)
-
-                    inputs = input_images.to(self.device)
-                    labels = target_masks.to(self.device)
-
-
-                    self.reset_grad()   # resettiamo i  gradients
-
-
-
-                    with torch.set_grad_enabled(phase == 'train'):
-                        outputs = self.model(inputs)
-                        loss = self.c_loss(outputs, labels)
-
-
-                        if phase == 'train':        #indietro e ottimimzziamo
-                            loss.backward()
-                            self.optim.step()
-
+            self.scheduler.step()
+            running_loss = 0.0
+            running_corrects = 0
+            # Iterate over data.
+            for I, (input_images, target_masks) in enumerate(data_iter):     #da I batch AL NUMERO DI BATCH PRESENTI
+                inputs = input_images.to(self.device)
+                labels = target_masks.to(self.device)
+                outputs = self.model(inputs)
+                self.reset_grad()   # resettiamo i  gradienti
+                loss = self.c_loss(outputs, labels)
+                loss.backward()
+                self.optim.step()
+                if I % 70 == 0:
                     # statistics
-                    running_loss += loss.item() * inputs.size(0)
-                    output_label = torch.argmax(outputs, dim=1) #argmax
+                    curr_loss = loss.item()
+                    running_loss += curr_loss # average, DO NOT multiply by the batch size
+                    output_label = torch.argmax(self.softmax(outputs), dim=1) #argmax
                     running_corrects += torch.sum(output_label == labels)
-                    tv.utils.save_image(to_rgb(output_label.cpu()),f"pippo_{epoch}_{I}_{phase}.jpg")  #f"pippo_{epoch}_{I}.jpg"
-                    
-                    
-                    accuracy, total_train, correct_train = self.pixel_acc(target_masks, output_label, total_train, correct_train)
-                    if phase =='train':
-                        seconds = time.time() - since        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
-                        elapsed = str(timedelta(seconds=seconds))
-                        print('Iteration : [{iter}/{iters}]\t'
-                            'minibatch: [{i}/{minibatch}]\t'
-                            'accuracy: [{accuracy:.4f}]\t'
-                            'Time : {time}\t'
-                            'Running Correct : {corr}\t'
-                            'Loss : {loss:.4f}\t'.format(i=I, minibatch=minbatch,
-                            iter=epoch, iters=self.cfg.n_iters, accuracy = accuracy,
-                            time=elapsed, corr=running_corrects, loss=loss.item()))
+                    tv.utils.save_image(to_rgb(output_label.cpu()),f"result_{epoch}_{I}.jpg")  #f"pippo_{epoch}_{I}.jpg"
+                    seconds = time.time() - since        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
+                    elapsed = str(timedelta(seconds=seconds))
+                    print('Iteration : [{iter}/{iters}]\t'
+                                'minibatch: [{i}/{minibatch}]\t'
+                                'Time : {time}\t'
+                                'Running Correct : {corr}\t'
+                                'Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch,
+                                iter=epoch, iters=self.cfg.n_iters,
+                                time=elapsed, corr=running_corrects, loss=curr_loss))
 
             if (epoch + 1) % self.cfg.log_step == 0:
                 seconds = time.time() - since        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                 elapsed = str(timedelta(seconds=seconds))
-                epoch_loss = running_loss / (batch_size * iters_per_epoch)
                 print('Iteration : [{iter}/{iters}]\t'
                     'Time : {time}\t'
                     'Running Correct : {corr}\t'
-                    'Loss : {loss:.4f}\t'.format(
+                    'Mean Loss Epoch : {mean_loss}\t'
+                    'Total Loss Epoch: {loss:.4f}\t'.format(
                     iter=epoch, iters=self.cfg.n_iters,
-                    time=elapsed, corr=running_corrects, loss=epoch_loss))                    
-  
+                    time=elapsed, corr=running_corrects,
+                    mean_loss=running_loss / iters_per_epoch,
+                    loss=running_loss))
 
-                
+
+
 
             self.save_network(self.model, "UNET_VOC", "latest", [0], epoch, self.optim, self.scheduler)
             if epoch % 10 == 0:
@@ -257,12 +210,3 @@ class Trainer:
         time_elapsed = time.time() - since
         print('Training complete in {:.0f}m {:.0f}s'.format(
             time_elapsed // 60, time_elapsed % 60))
-        print('Best val loss: {:4f}'.format(best_loss))
-
-        if USE_NSML:                            #non lo usiamo
-            ori_pic = self.denorm(input_var[0:4])
-            self.viz.images(ori_pic, opts=dict(title='Original_' + str(epoch)))
-            gt_mask = to_rgb(target_var[0:4])
-            self.viz.images(gt_mask, opts=dict(title='GT_mask_' + str(epoch)))
-            model_mask = to_rgb(output_label[0:4].cpu())
-            self.viz.images(model_mask, opts=dict(title='Model_mask_' + str(epoch)))
