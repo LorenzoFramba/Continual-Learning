@@ -97,13 +97,18 @@ class Trainer:
             except:
                 print("Error during the load of the model")
 
-    def pixel_acc(self):
-        """ Calculate accuracy of pixel predictions """
-        pass
+    def pixel_acc(self, mask, predicted, total_train, correct_train):
+        total_train += mask.nelement()
+        correct_train += predicted.eq(mask.data).sum().item()
+        train_accuracy = 100 * correct_train / total_train
+        return train_accuracy, total_train, correct_train
 
-    def mean_IU(self):
+    def mean_IU(self, target, prediction):
         """ Calculate mean Intersection over Union """
-        pass
+        intersection = np.logical_and(target, prediction)
+        union = np.logical_or(target, prediction)
+        iou_score = np.sum(intersection) / np.sum(union)
+        return iou_score
 
     def build_model(self):
         if self.cfg.model == 'unet':        #noi usiamo U-NET, quindi bene
@@ -170,7 +175,8 @@ class Trainer:
                 if phase == 'train':
                     running_loss = 0.0
                     running_corrects = 0
-
+                    total_train = 0
+                    correct_train =0
                 # Iterate over data.
                 batch_size =  self.cfg.train_batch_size   #10
                 minbatch = None
@@ -214,15 +220,19 @@ class Trainer:
                     output_label = torch.argmax(outputs, dim=1) #argmax
                     running_corrects += torch.sum(output_label == labels)
                     tv.utils.save_image(to_rgb(output_label.cpu()),f"pippo_{epoch}_{I}_{phase}.jpg")  #f"pippo_{epoch}_{I}.jpg"
+                    
+                    
+                    accuracy, total_train, correct_train = self.pixel_acc(target_masks, output_label, total_train, correct_train)
                     if phase =='train':
                         seconds = time.time() - since        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                         elapsed = str(timedelta(seconds=seconds))
                         print('Iteration : [{iter}/{iters}]\t'
                             'minibatch: [{i}/{minibatch}]\t'
+                            'accuracy: [{accuracy:.4f}]\t'
                             'Time : {time}\t'
                             'Running Correct : {corr}\t'
                             'Loss : {loss:.4f}\t'.format(i=I, minibatch=minbatch,
-                            iter=epoch, iters=self.cfg.n_iters,
+                            iter=epoch, iters=self.cfg.n_iters, accuracy = accuracy,
                             time=elapsed, corr=running_corrects, loss=loss.item()))
 
             if (epoch + 1) % self.cfg.log_step == 0:
