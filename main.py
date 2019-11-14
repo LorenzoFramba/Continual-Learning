@@ -31,7 +31,7 @@ def get_loader(config):
                                        batch_size=config.train_batch_size,  # 16 come argomento
                                        shuffle=True,
                                        drop_last=True,
-                                       num_workers=config.num_threads, pin_memory=True)            #true vuol dire che per ogni epoca, il dataset viene mescolato
+                                       num_workers=config.num_workers, pin_memory=True)            #true vuol dire che per ogni epoca, il dataset viene mescolato
 
         val_data_set = VOC(root=config.path,            #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
                            image_size=(config.h_image_size, config.w_image_size),#h_image_size e w_image_size  sono 256 come argomento
@@ -40,7 +40,7 @@ def get_loader(config):
         val_data_loader = DataLoader(train_data_set,  #crea un dataset con un batch size
                                      batch_size=config.val_batch_size,  # 16 come argomento
                                      shuffle=False,
-                                     num_workers=config.num_threads, pin_memory=True) # For make samples out of various models, shuffle=False
+                                     num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
     elif config.dataset == 'gta':
         # TODO:
         pass
