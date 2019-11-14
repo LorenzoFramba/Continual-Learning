@@ -142,8 +142,8 @@ class Trainer:
 
 
     def train_val(self):
+        best_loss = 100000000.0
         since = time.time()
-        torch.cuda.synchronize()
         iters_per_epoch = len(self.train_data_loader.dataset) // self.cfg.train_batch_size      #divisione tenendo interi
         if len(self.train_data_loader.dataset) % self.cfg.train_batch_size != 0:
             iters_per_epoch += 1
@@ -167,13 +167,18 @@ class Trainer:
                 else:
                     self.model.eval()   # Set model to evaluate mode
 
-                running_loss = 0.0
-                running_corrects = 0
+                if phase == 'train':
+                    running_loss = 0.0
+                    running_corrects = 0
 
                 # Iterate over data.
                 batch_size =  self.cfg.train_batch_size   #10
-
-                for I in range(iters_per_epoch):     #da I batch AL NUMERO DI BATCH PRESENTI
+                minbatch = None
+                if phase =='train':
+                    minbatch=iters_per_epoch
+                else:
+                    minbatch = len(self.val_data_loader.dataset) // self.cfg.val_batch_size
+                for I in range(minbatch):     #da I batch AL NUMERO DI BATCH PRESENTI
                     try:
                         if phase == 'train':
                             input_images, target_masks = next(data_iter)     #passa il prossimo elemento dall'iteratore, input=immagine e target=mask
@@ -208,38 +213,32 @@ class Trainer:
                     running_loss += loss.item() * inputs.size(0)
                     output_label = torch.argmax(outputs, dim=1) #argmax
                     running_corrects += torch.sum(output_label == labels)
-                    if (I + 1) % self.cfg.log_step == 0:
+                    tv.utils.save_image(to_rgb(output_label.cpu()),f"pippo_{epoch}_{I}_{phase}.jpg")  #f"pippo_{epoch}_{I}.jpg"
+                    if phase =='train':
                         seconds = time.time() - since        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                         elapsed = str(timedelta(seconds=seconds))
                         print('Iteration : [{iter}/{iters}]\t'
+                            'minibatch: [{i}/{minibatch}]\t'
                             'Time : {time}\t'
                             'Running Correct : {corr}\t'
-                            'Loss : {loss:.4f}\t'.format(
-                            iter=I+1, iters=self.cfg.n_iters,
+                            'Loss : {loss:.4f}\t'.format(i=I, minibatch=minbatch,
+                            iter=epoch, iters=self.cfg.n_iters,
                             time=elapsed, corr=running_corrects, loss=loss.item()))
 
-
-                    #grid = tv.utils.make_grid(input_images,nrow=16)
-                    tv.utils.save_image(to_rgb(output_label.cpu()),f"pippo_{epoch}_{I}.jpg")
-                    print('label:',target_masks)
-               # plt.imshow(tv.utils.make_grid(input_images.to_rgb()))      #aggiunto
-                    #plt.imshow(tv.utils.make_grid(input_images[I].permute(1, 2, 0)))
-                    #input_images.permute(1, 2, 0)
-                    #plt.imshow(input_images, cmap='gray') # I would add interpolation='none'
-
-
-                   # plt.imshow(target_masks, cmap='jet', alpha=0.5) # interpolation='none'
-
+            if (epoch + 1) % self.cfg.log_step == 0:
+                seconds = time.time() - since        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
+                elapsed = str(timedelta(seconds=seconds))
                 epoch_loss = running_loss / (batch_size * iters_per_epoch)
+                print('Iteration : [{iter}/{iters}]\t'
+                    'Time : {time}\t'
+                    'Running Correct : {corr}\t'
+                    'Loss : {loss:.4f}\t'.format(
+                    iter=epoch, iters=self.cfg.n_iters,
+                    time=elapsed, corr=running_corrects, loss=epoch_loss))                    
+  
 
-                print('{} Loss: {:.4f}'.format(
-                    phase, epoch_loss))
+                
 
-                # deep copy the model
-                if phase == 'val' and epoch_loss < best_loss:
-                    best_loss = epoch_loss
-                    #best_model_wts = copy.deepcopy(self.model.state_dict())
-                #self.save_model()
             self.save_network(self.model, "UNET_VOC", "latest", [0], epoch, self.optim, self.scheduler)
             if epoch % 10 == 0:
                 self.save_network(self.model, "UNET_VOC", f"{epoch}", [0], epoch,
