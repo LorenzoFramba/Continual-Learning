@@ -1,5 +1,5 @@
-__pycache__/*
+__pycache__/
 model/
 sample/
-models/__pycache__
-datasets/__pycache__
+*.py[cod]
+*$py.class
