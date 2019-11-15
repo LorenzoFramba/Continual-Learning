@@ -53,7 +53,8 @@ def main(config):               #il config sarebbe il parser con tanti argomenti
     print(sys.version)
     make_dir(config.model_save_path)    #crea cartella del modello
     make_dir(config.sample_save_path) #crea cartella del sample
-
+    for folder in ["inputs","ground_truth","generated"]:
+        make_dir(os.path.join(config.sample_save_path, folder))
     if config.mode == 'train':
         train_data_loader, val_data_loader = get_loader(config) #associa ai due dataset i valori. presi dal config
         trainer = Trainer(train_data_loader=train_data_loader,  #fa partire il training, passando i due dataset

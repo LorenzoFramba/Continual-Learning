@@ -147,7 +147,6 @@ class Trainer:
         print(f"batch size {self.cfg.train_batch_size} dataset size : [{len(self.train_data_loader.dataset)}]"
               f" epoch : [{self.cfg.n_iters}]"
               f" iterations per epoch: {iters_per_epoch}")
-        data_iter = iter(self.train_data_loader)
 
         for epoch in range(self.cfg.n_iters):    #numero di barchs
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
@@ -155,8 +154,11 @@ class Trainer:
             self.scheduler.step()
             running_loss = 0.0
             running_corrects = 0
+            start_epoch = time.time()
+            print_number = 0
             # Iterate over data.
-            for I, (input_images, target_masks) in enumerate(data_iter):     #da I batch AL NUMERO DI BATCH PRESENTI
+            for I, (input_images, target_masks) in enumerate(iter(self.train_data_loader)):     #da I batch AL NUMERO DI BATCH PRESENTI
+                start_mini_batch = time.time()
                 inputs = input_images.to(self.device)
                 labels = target_masks.to(self.device)
                 outputs = self.model(inputs)
@@ -164,35 +166,40 @@ class Trainer:
                 loss = self.c_loss(outputs, labels)
                 loss.backward()
                 self.optim.step()
-                if I % 70 == 0:
+                if I % 10 == 0:
+                    print_number += 1 
                     # statistics
                     curr_loss = loss.item()
                     running_loss += curr_loss # average, DO NOT multiply by the batch size
                     output_label = torch.argmax(self.softmax(outputs), dim=1) #argmax
                     running_corrects += torch.sum(output_label == labels)
-                    tv.utils.save_image(to_rgb(output_label.cpu()),f"result_{epoch}_{I}.jpg")  #f"pippo_{epoch}_{I}.jpg"
-                    seconds = time.time() - since        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
+                    tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg"))  #f"pippo_{epoch}_{I}.jpg"
+                    tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(self.cfg.sample_save_path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  #f"pippo_{epoch}_{I}.jpg"
+                    tv.utils.save_image(inputs.cpu(),os.path.join(self.cfg.sample_save_path,"inputs",f"input_{epoch}_{I}.jpg"),normalize=True, range=(-1,1))  #f"pippo_{epoch}_{I}.jpg"
+                    seconds = time.time() - start_mini_batch        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                     elapsed = str(timedelta(seconds=seconds))
                     print('Iteration : [{iter}/{iters}]\t'
                                 'minibatch: [{i}/{minibatch}]\t'
-                                'Time : {time}\t'
+                                'Mini Batch Time : {time}\t'
                                 'Running Correct : {corr}\t'
-                                'Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch,
+                                'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch,
                                 iter=epoch, iters=self.cfg.n_iters,
                                 time=elapsed, corr=running_corrects, loss=curr_loss))
 
             if (epoch + 1) % self.cfg.log_step == 0:
-                seconds = time.time() - since        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
+                seconds = time.time() - start_epoch        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                 elapsed = str(timedelta(seconds=seconds))
+                seconds_from_beginning = time.time() - since
+                elapsed_start = str(timedelta(seconds=seconds_from_beginning))
                 print('Iteration : [{iter}/{iters}]\t'
-                    'Time : {time}\t'
+                    'Epoch Time : {time_epoch}\t'
+                    'Total Time : {time_start}\t'
                     'Running Correct : {corr}\t'
-                    'Mean Loss Epoch : {mean_loss}\t'
-                    'Total Loss Epoch: {loss:.4f}\t'.format(
+                    'Loss Epoch: {loss:.4f}\t'.format(
                     iter=epoch, iters=self.cfg.n_iters,
-                    time=elapsed, corr=running_corrects,
-                    mean_loss=running_loss / iters_per_epoch,
-                    loss=running_loss))
+                    time_epoch=elapsed, time_start=elapsed_start,
+                    corr=running_corrects,
+                    loss=running_loss / print_number))
 
 
 
