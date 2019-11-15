@@ -3,3 +3,7 @@ model/
 sample/
 *.py[cod]
 *$py.class
+.idea
+data/
+models/__pycache__
+datasets/__pycache__
