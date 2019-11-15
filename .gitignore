@@ -1,1 +1,5 @@
 __pycache__/*
+model/
+sample/
+models/__pycache__
+datasets/__pycache__
