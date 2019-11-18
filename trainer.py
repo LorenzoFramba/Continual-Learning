@@ -60,49 +60,52 @@ class Trainer:
     # helper saving function that can be used by subclasses
     def save_network(self, network, network_label, epoch_label, gpu_ids,
                      epoch, optimizer, scheduler):
-        save_filename = '%s_net_%s.pth' % (epoch_label, network_label)
-        save_path = os.path.join(self.cfg.model_save_path, save_filename)
-        print(save_path)
+        save_filename = '%s_net_%s.pth' % (epoch_label, network_label) #salva la epoca ed il tipo di rete ( UNET) 
+        save_path = os.path.join(self.cfg.model_save_path, save_filename) #il path dove viene salvato
+        print(save_path)        #a schermo
         state = {
             "epoch": epoch + 1,
-            "model_state": network.cpu().state_dict(),
+            "model_state": network.cpu().state_dict(),  #passa un dizionario che contiene lo stato e tutti i parametri
             "optimizer_state": optimizer.state_dict(),
             "scheduler_state": scheduler.state_dict()
         }
-        torch.save(state, save_path)
+        torch.save(state, save_path)   #salviamo lo stato nel path
         if len(gpu_ids) and torch.cuda.is_available():
             network.cuda()
 
     # helper loading function that can be used by subclasses
     def load_network(self, network, network_label, epoch_label,
                      epoch, optimizer, scheduler, save_dir=''):
-        save_filename = '%s_net_%s.pth' % (epoch_label, network_label)
+        save_filename = '%s_net_%s.pth' % (epoch_label, network_label)  
         save_dir = self.cfg.model_save_path
         save_path = os.path.join(save_dir, save_filename)
-        if not os.path.isfile(save_path):
-            print('%s not exists yet!' % save_path)
+        if not os.path.isfile(save_path):               #se non si trova nel path
+            print('%s not exists yet!' % save_path)     #diciamo che non esiste! 
             if network_label == 'G':
                 raise ('Generator must exist!')
         else:
             # network.load_state_dict(torch.load(save_path))
             try:
-                checkpoint = torch.load(save_path)
-                network.load_state_dict(checkpoint["model_state"])
-                epoch = checkpoint["epoch"]
+                checkpoint = torch.load(save_path)              #checkpoint sarebbe un dizionario/oggetto
+                network.load_state_dict(checkpoint["model_state"])      #gli passiamo lo stato con i parametri
+                epoch = checkpoint["epoch"]                         
                 optimizer.load_state(checkpoint["optimizer_state"])
                 scheduler.load_state(checkpoint["scheduler_state"])
                 print("Load model Done!")
             except:
-                print("Error during the load of the model")
+                print("Error during the load of the model")         #non viene importato
 
+
+ #numero di pixel correttamente classificati / numero di erroreamente non pixel classificati ( falsi negativi)
     def pixel_acc(self, mask, predicted, total_train, correct_train):
         total_train += mask.nelement()
         correct_train += predicted.eq(mask.data).sum().item()
         train_accuracy = 100 * correct_train / total_train
         return train_accuracy, total_train, correct_train
 
+
+ #pixel accuracy * 1 / ( sommatoria ( falsi negativi - pixel correttamente classificati))  * 1 / numero di classi   ``#        """ Calculate mean Intersection over Union """
     def mean_IU(self, target, prediction):
-        """ Calculate mean Intersection over Union """
         intersection = np.logical_and(target, prediction)
         union = np.logical_or(target, prediction)
         iou_score = np.sum(intersection) / np.sum(union)
@@ -159,36 +162,47 @@ class Trainer:
             self.scheduler.step()
             running_loss = 0.0
             running_corrects = 0
+            total_train = 0.0
+            correct_train = 0.0
+            pixel_accuracy=0.0
             start_epoch = time.time()
             print_number = 0
             # Iterate over data.
-            for I, (input_images, target_masks) in enumerate(iter(self.train_data_loader)):     #da I batch AL NUMERO DI BATCH PRESENTI
+            for I, (input_images, target_masks) in enumerate(iter(self.train_data_loader)):     
                 start_mini_batch = time.time()
-                inputs = input_images.to(self.device)
-                labels = target_masks.to(self.device)
-                outputs = self.model(inputs)
+                inputs = input_images.to(self.device)       #buttiamo in GPU
+                labels = target_masks.to(self.device)       #buttiamo in GPU
+                outputs = self.model(inputs)        
                 self.reset_grad()   # resettiamo i  gradienti
-                loss = self.c_loss(outputs, labels)
-                loss.backward()
-                self.optim.step()
+                loss = self.c_loss(outputs, labels)     #cross entropy tra l'output e quello che avremmo dovuto ottenere
+                loss.backward()         #fa il gradiente
+                self.optim.step()       #ottimizza tramite adam
                 if I % 10 == 0:
                     print_number += 1 
                     # statistics
-                    curr_loss = loss.item()
+                    curr_loss = loss.item() #ritorna il valore del tensore 
                     running_loss += curr_loss # average, DO NOT multiply by the batch size
                     output_label = torch.argmax(self.softmax(outputs), dim=1) #argmax
                     running_corrects += torch.sum(output_label == labels)
-                    tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg"))  #f"pippo_{epoch}_{I}.jpg"
-                    tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(self.cfg.sample_save_path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  #f"pippo_{epoch}_{I}.jpg"
-                    tv.utils.save_image(inputs.cpu(),os.path.join(self.cfg.sample_save_path,"inputs",f"input_{epoch}_{I}.jpg"),normalize=True, range=(-1,1))  #f"pippo_{epoch}_{I}.jpg"
+                    pixel_accuracy, total_train, correct_train = self.pixel_acc(target_masks,outputs,total_train,correct_train)  #pixel accuracy
+                    mean = self.mean_IU(target_masks,outputs)
+    
+
+                    tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
+                    tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(self.cfg.sample_save_path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  
+                    tv.utils.save_image(inputs.cpu(),os.path.join(self.cfg.sample_save_path,"inputs",f"input_{epoch}_{I}.jpg"),normalize=True, range=(-1,1))  
+
                     seconds = time.time() - start_mini_batch        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                     elapsed = str(timedelta(seconds=seconds))
                     print('Iteration : [{iter}/{iters}]\t'
                                 'minibatch: [{i}/{minibatch}]\t'
                                 'Mini Batch Time : {time}\t'
+                                'Pixel Accuracy : {acc}\t'
+                                'Mean  : {mean}\t'
                                 'Running Correct : {corr}\t'
-                                'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch,
-                                iter=epoch, iters=self.cfg.n_iters,
+                                'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch, 
+                                acc = pixel_accuracy,
+                                iter=epoch, iters=self.cfg.n_iters, mean=mean,
                                 time=elapsed, corr=running_corrects, loss=curr_loss))
 
             if (epoch + 1) % self.cfg.log_step == 0:
@@ -209,7 +223,7 @@ class Trainer:
 
 
 
-            self.save_network(self.model, "UNET_VOC", "latest", [0], epoch, self.optim, self.scheduler)
+            self.save_network(self.model, "UNET_VOC", "latest", [0], epoch, self.optim, self.scheduler)         #salva l'ultima epoca
             if epoch % 10 == 0:
                 self.save_network(self.model, "UNET_VOC", f"{epoch}", [0], epoch,
                                   self.optim, self.scheduler)
