@@ -146,7 +146,6 @@ class Trainer:
 
 
     def train_val(self):
-        best_loss = 100000000.0
         since = time.time()
         iters_per_epoch = len(self.train_data_loader.dataset) // self.cfg.train_batch_size      #divisione tenendo interi
         epoch = self.start_epoch
@@ -165,6 +164,7 @@ class Trainer:
             total_train = 0.0
             correct_train = 0.0
             pixel_accuracy=0.0
+            pixel_accuracy_epoch=0.0
             start_epoch = time.time()
             print_number = 0
             # Iterate over data.
@@ -184,9 +184,9 @@ class Trainer:
                     curr_loss = loss.item() #ritorna il valore del tensore 
                     running_loss += curr_loss # average, DO NOT multiply by the batch size
                     output_label = torch.argmax(self.softmax(outputs), dim=1) #argmax
-                    #running_corrects += torch.sum(output_label == labels)
-                    running_corrects += output_label.eq(labels.data).sum().item()
+                    running_corrects += output_label.eq(labels.data).sum().item()   #running_corrects += torch.sum(output_label == labels)
                     pixel_accuracy, total_train, correct_train = self.pixel_acc(labels,outputs,total_train,running_corrects)  #pixel accuracy
+                    pixel_accuracy_epoch+=pixel_accuracy
                     #mean = self.mean_IU(target_masks,outputs)
                     #mean = self.mean_IU(labels,outputs)
                     mean=0
@@ -202,12 +202,10 @@ class Trainer:
                                 'Mini Batch Time : {time}\t'
                                 'Pixel Accuracy : {acc}\t'
                                 'Mean  : {mean}\t'
-                                'Running Correct : {corr}\t'
                                 'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch, 
                                 acc = pixel_accuracy,
-                                iter=epoch, iters=self.cfg.n_iters, mean=mean,
-                                time=elapsed, corr=running_corrects, loss=curr_loss))
-
+                                iter=epoch, iters=self.cfg.n_iters, mean=mean, 
+                                time=elapsed, loss=curr_loss))
             if (epoch + 1) % self.cfg.log_step == 0:
                 seconds = time.time() - start_epoch        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                 elapsed = str(timedelta(seconds=seconds))
@@ -216,11 +214,11 @@ class Trainer:
                 print('Iteration : [{iter}/{iters}]\t'
                     'Epoch Time : {time_epoch}\t'
                     'Total Time : {time_start}\t'
-                    'Running Correct : {corr}\t'
+                    'Accuracy Epoch : {acc}\t'
                     'Loss Epoch: {loss:.4f}\t'.format(
                     iter=epoch, iters=self.cfg.n_iters,
                     time_epoch=elapsed, time_start=elapsed_start,
-                    corr=running_corrects,
+                    acc =pixel_accuracy_epoch / print_number,
                     loss=running_loss / print_number))
 
 
