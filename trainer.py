@@ -98,8 +98,7 @@ class Trainer:
 
  #numero di pixel correttamente classificati / numero di erroreamente non pixel classificati ( falsi negativi)
     def pixel_acc(self, mask, predicted, total_train, correct_train):
-        total_train += mask.nelement()
-        correct_train += predicted.eq(mask.data).sum().item()
+        total_train += mask.nelement()          #conta gli elementi all'interno del tensore
         train_accuracy = 100 * correct_train / total_train
         return train_accuracy, total_train, correct_train
 
@@ -160,6 +159,7 @@ class Trainer:
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
             print('-' * 10)
             self.scheduler.step()
+            mean =0
             running_loss = 0.0
             running_corrects = 0
             total_train = 0.0
@@ -168,7 +168,8 @@ class Trainer:
             start_epoch = time.time()
             print_number = 0
             # Iterate over data.
-            for I, (input_images, target_masks) in enumerate(iter(self.train_data_loader)):     
+            for I, data in enumerate(iter(self.train_data_loader)):   
+                input_images, target_masks = data
                 start_mini_batch = time.time()
                 inputs = input_images.to(self.device)       #buttiamo in GPU
                 labels = target_masks.to(self.device)       #buttiamo in GPU
@@ -183,10 +184,12 @@ class Trainer:
                     curr_loss = loss.item() #ritorna il valore del tensore 
                     running_loss += curr_loss # average, DO NOT multiply by the batch size
                     output_label = torch.argmax(self.softmax(outputs), dim=1) #argmax
-                    running_corrects += torch.sum(output_label == labels)
-                    pixel_accuracy, total_train, correct_train = self.pixel_acc(target_masks,outputs,total_train,correct_train)  #pixel accuracy
-                    mean = self.mean_IU(target_masks,outputs)
-    
+                    #running_corrects += torch.sum(output_label == labels)
+                    running_corrects += output_label.eq(labels.data).sum().item()
+                    pixel_accuracy, total_train, correct_train = self.pixel_acc(labels,outputs,total_train,running_corrects)  #pixel accuracy
+                    #mean = self.mean_IU(target_masks,outputs)
+                    #mean = self.mean_IU(labels,outputs)
+                    mean=0
 
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
                     tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(self.cfg.sample_save_path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  
