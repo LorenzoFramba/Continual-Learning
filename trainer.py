@@ -87,13 +87,10 @@ class Trainer:
             # network.load_state_dict(torch.load(save_path))
             try:
                 checkpoint = torch.load(save_path)              #checkpoint sarebbe una struttura ( tipo struct ?? )
-                print(checkpoint.keys())
-                print(checkpoint.epoch)
-                print(epoch)
                 network.load_state_dict(checkpoint["model_state"])      #gli passiamo lo stato con i parametri
-                epoch = checkpoint["epoch"]                         
-                optimizer.load_state(checkpoint["optimizer_state"])
-                scheduler.load_state(checkpoint["scheduler_state"])
+                self.start_epoch = checkpoint["epoch"]
+                optimizer.load_state_dict(checkpoint["optimizer_state"])
+                scheduler.load_state_dict(checkpoint["scheduler_state"])
                 print("Load model Done!")
             except:
                 print("Error during the load of the model")         #non viene importato
