@@ -86,7 +86,7 @@ class Trainer:
         else:
             # network.load_state_dict(torch.load(save_path))
             try:
-                checkpoint = torch.load(save_path)              #checkpoint sarebbe un dizionario/oggetto
+                checkpoint = torch.load(save_path)              #checkpoint sarebbe una struttura ( tipo struct ?? )
                 network.load_state_dict(checkpoint["model_state"])      #gli passiamo lo stato con i parametri
                 epoch = checkpoint["epoch"]                         
                 optimizer.load_state(checkpoint["optimizer_state"])
@@ -153,8 +153,7 @@ class Trainer:
         print(f"batch size {self.cfg.train_batch_size} dataset size : [{len(self.train_data_loader.dataset)}]"
               f" epoch : [{self.cfg.n_iters}]"
               f" iterations per epoch: {iters_per_epoch}")
-
-        for epoch in range(self.cfg.n_iters):    #numero di barchs
+        while epoch < self.cfg.n_iters:
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
             print('-' * 10)
             self.scheduler.step()
@@ -188,8 +187,7 @@ class Trainer:
                     pixel_accuracy, total_train, correct_train = self.pixel_acc(labels,outputs,total_train,running_corrects)  #pixel accuracy
                     pixel_accuracy_epoch+=pixel_accuracy
                     #mean = self.mean_IU(target_masks,outputs)
-                    #mean = self.mean_IU(labels,outputs)
-                    mean=0
+                    mean = self.mean_IU(labels.cpu().permute(0,2,3,1).numpy(),outputs.detach().cpu().permute(0,2,3,1).numpy())
 
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
                     tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(self.cfg.sample_save_path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  
@@ -220,7 +218,7 @@ class Trainer:
                     time_epoch=elapsed, time_start=elapsed_start,
                     acc =pixel_accuracy_epoch / print_number,
                     loss=running_loss / print_number))
-
+            epoch +=1
 
 
 
