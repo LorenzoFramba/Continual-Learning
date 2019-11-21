@@ -184,10 +184,10 @@ class Trainer:
                     running_loss += curr_loss # average, DO NOT multiply by the batch size
                     output_label = torch.argmax(self.softmax(outputs), dim=1) #argmax
                     running_corrects += output_label.eq(labels.data).sum().item()   #running_corrects += torch.sum(output_label == labels)
-                    pixel_accuracy, total_train, correct_train = self.pixel_acc(labels,outputs,total_train,running_corrects)  #pixel accuracy
+                    pixel_accuracy, total_train, correct_train = self.pixel_acc(labels,output_label,total_train,running_corrects)  #pixel accuracy
                     pixel_accuracy_epoch+=pixel_accuracy
                     #mean = self.mean_IU(target_masks,outputs)
-                    mean = self.mean_IU(labels.cpu().permute(0,2,3,1).numpy(),outputs.detach().cpu().permute(0,2,3,1).numpy())
+                    mean = self.mean_IU(labels.cpu().numpy(),output_label.cpu().numpy())
 
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
                     tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(self.cfg.sample_save_path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  
