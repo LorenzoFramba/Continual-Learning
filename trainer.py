@@ -149,6 +149,7 @@ class Trainer:
         since = time.time()
         iters_per_epoch = len(self.train_data_loader.dataset) // self.cfg.train_batch_size      #divisione tenendo interi
         epoch = self.start_epoch
+        print(self.start_epoch)
 
         print(f"batch size {self.cfg.train_batch_size} dataset size : [{len(self.train_data_loader.dataset)}]"
               f" epoch : [{self.cfg.n_iters}]"
