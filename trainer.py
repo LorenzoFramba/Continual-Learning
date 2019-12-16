@@ -142,6 +142,10 @@ class Trainer:
         self.model = self.model.to(self.device)
         if self.device == "cuda":
             torch.backends.cudnn.benchmark = True
+            for state in self.optim.state.values():
+                for k, v in state.items():
+                    if torch.is_tensor(v):
+                        state[k] = v.cuda()
 
 
 
