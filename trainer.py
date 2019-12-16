@@ -139,6 +139,10 @@ class Trainer:
         if self.n_gpu > 1:
             print('Use data parallel model(# gpu: {})'.format(self.n_gpu))
             self.model = nn.DataParallel(self.model)        #implementa il parallelismo, se disponibile
+            for state in self.optim.state.values():
+                for k, v in state.items():
+                    if isinstance(v, torch.Tensor):
+                        state[k] = v.cuda()
         self.model = self.model.to(self.device)
         if self.device == "cuda":
             torch.backends.cudnn.benchmark = True
