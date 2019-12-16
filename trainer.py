@@ -144,7 +144,7 @@ class Trainer:
             torch.backends.cudnn.benchmark = True
             for state in self.optim.state.values():
                 for k, v in state.items():
-                    if isinstance(v, torch.Tensor):
+                    if torch.is_tensor(v):
                         state[k] = v.cuda()
 
 
