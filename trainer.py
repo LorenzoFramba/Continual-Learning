@@ -103,6 +103,41 @@ class Trainer:
         return train_accuracy, total_train, correct_train
 
 
+    
+    def overall_pixel_acc(self, hist):
+        correct = torch.diag(hist).sum()
+        total = hist.sum()
+        overall_acc = correct / (total + EPS)
+        return overall_acc
+
+    def _fast_conf_matrix(self,true, pred, num_classes):
+        mask = (true >= 0) & (true < num_classes)
+        conf_matrix = torch.bincount(
+            num_classes * true[mask] + pred[mask],
+            minlength=num_classes ** 2,
+        ).reshape(num_classes, num_classes).float()
+        return conf_matrix
+
+    def nanmean(self, x):
+        """Computes the arithmetic mean ignoring any NaNs."""
+        return torch.mean(x[x == x])
+
+    def per_class_pixel_acc(self, conf_matrix):
+        correct_per_class = torch.diag(conf_matrix)
+        total_per_class = conf_matrix.sum(dim=1)
+        per_class_acc = correct_per_class / (total_per_class + 1e-10)
+        avg_per_class_acc = nanmean(per_class_acc)
+        return avg_per_class_acc
+
+    def eval_metrics(self, true, pred, num_classes):
+        hist = torch.zeros((num_classes, num_classes))
+        for t, p in zip(true, pred):
+            hist += _fast_conf_matrix(t.flatten(), p.flatten(), num_classes)
+        overall_acc = overall_pixel_acc(hist)
+        avg_per_class_acc = per_class_pixel_acc(hist)
+        return overall_acc, avg_per_class_acc
+
+
  #pixel accuracy * 1 / ( sommatoria ( falsi negativi - pixel correttamente classificati))  * 1 / numero di classi   ``#        """ Calculate mean Intersection over Union """
     def mean_IU(self, target, prediction):
         intersection = np.logical_and(target, prediction)
@@ -165,6 +200,8 @@ class Trainer:
             correct_train = 0.0
             pixel_accuracy=0.0
             pixel_accuracy_epoch=0.0
+            pixel_acc = 0.0 
+            pixel_acc_class = 0.0
             start_epoch = time.time()
             print_number = 0
             # Iterate over data.
@@ -187,7 +224,8 @@ class Trainer:
                     running_corrects += output_label.eq(labels.data).sum().item()   #running_corrects += torch.sum(output_label == labels)
                     pixel_accuracy, total_train, correct_train = self.pixel_acc(labels,output_label,total_train,running_corrects)  #pixel accuracy
                     pixel_accuracy_epoch+=pixel_accuracy
-                    #mean = self.mean_IU(target_masks,outputs)
+
+                    pixel_acc, pixel_acc_class = self.eval_metrics(labels, output_label, 20)
                     mean = self.mean_IU(labels.cpu().numpy(),output_label.cpu().numpy())
 
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
@@ -199,9 +237,13 @@ class Trainer:
                     print('Iteration : [{iter}/{iters}]\t'
                                 'minibatch: [{i}/{minibatch}]\t'
                                 'Mini Batch Time : {time}\t'
-                                'Pixel Accuracy : {acc}\t'
+                                'Pixel Accuracy : {acc:.4f}\t'
+                                'Pixel Accuracy : {acc2:.4f}\t'
+                                'Pixel Accuracy : {acc_class:.4f}\t'
                                 'Mean  : {mean}\t'
-                                'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch, 
+                                'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch,
+                                acc2 = pixel_acc, 
+                                acc_class = pixel_acc_class,
                                 acc = pixel_accuracy,
                                 iter=epoch, iters=self.cfg.n_iters, mean=mean, 
                                 time=elapsed, loss=curr_loss))
