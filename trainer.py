@@ -126,15 +126,15 @@ class Trainer:
         correct_per_class = torch.diag(conf_matrix)
         total_per_class = conf_matrix.sum(dim=1)
         per_class_acc = correct_per_class / (total_per_class + 1e-10)
-        avg_per_class_acc = nanmean(per_class_acc)
+        avg_per_class_acc = self.nanmean(per_class_acc)
         return avg_per_class_acc
 
     def eval_metrics(self, true, pred, num_classes):
         hist = torch.zeros((num_classes, num_classes))
         for t, p in zip(true, pred):
-            hist += _fast_conf_matrix(t.flatten(), p.flatten(), num_classes)
-        overall_acc = overall_pixel_acc(hist)
-        avg_per_class_acc = per_class_pixel_acc(hist)
+            hist += self._fast_conf_matrix(t.flatten(), p.flatten(), num_classes)
+        overall_acc = self.overall_pixel_acc(hist)
+        avg_per_class_acc = self.per_class_pixel_acc(hist)
         return overall_acc, avg_per_class_acc
 
 
