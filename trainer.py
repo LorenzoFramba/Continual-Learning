@@ -102,12 +102,10 @@ class Trainer:
         train_accuracy = 100 * correct_train / total_train
         return train_accuracy, total_train, correct_train
 
-
-    
     def overall_pixel_acc(self, matrix):
         correct = torch.diag(matrix).sum()
         total = matrix.sum()
-        overall_acc = correct * 100 / (total + 1e-10)
+        overall_acc = correct * 100 / (total)##+ 1e-10
         return overall_acc
 
     def _fast_conf_matrix(self,true, pred, num_classes):
@@ -119,22 +117,20 @@ class Trainer:
         return conf_matrix
 
     def nanmean(self, x):
-        """Computes the arithmetic mean ignoring any NaNs."""
         return torch.mean(x[x == x])
 
     def mean_IU_2(self, matrix):
         A_inter_B = torch.diag(matrix)
         A = matrix.sum(dim=1)
         B = matrix.sum(dim=0)
-        jaccard = A_inter_B / (A + B - A_inter_B + 1e-10)
+        jaccard = A_inter_B / (A + B - A_inter_B )##+ 1e-10
         avg_jacc = self.nanmean(jaccard)
         return avg_jacc
-
 
     def per_class_pixel_acc(self, conf_matrix):
         correct_per_class = torch.diag(conf_matrix)
         total_per_class = conf_matrix.sum(dim=1)
-        per_class_acc = 100* correct_per_class / (total_per_class + 1e-10)
+        per_class_acc = 100* correct_per_class / (total_per_class )##+ 1e-10
         avg_per_class_acc = self.nanmean(per_class_acc)
         return avg_per_class_acc
 
