@@ -104,10 +104,10 @@ class Trainer:
 
 
     
-    def overall_pixel_acc(self, hist):
-        correct = torch.diag(hist).sum()
-        total = hist.sum()
-        overall_acc = correct / (total + EPS)
+    def overall_pixel_acc(self, matrix):
+        correct = torch.diag(matrix).sum()
+        total = matrix.sum()
+        overall_acc = correct * 100 / (total + 1e-10)
         return overall_acc
 
     def _fast_conf_matrix(self,true, pred, num_classes):
@@ -122,20 +122,30 @@ class Trainer:
         """Computes the arithmetic mean ignoring any NaNs."""
         return torch.mean(x[x == x])
 
+    def mean_IU_2(self, matrix):
+        A_inter_B = torch.diag(matrix)
+        A = matrix.sum(dim=1)
+        B = matrix.sum(dim=0)
+        jaccard = A_inter_B / (A + B - A_inter_B + 1e-10)
+        avg_jacc = self.nanmean(jaccard)
+        return avg_jacc
+
+
     def per_class_pixel_acc(self, conf_matrix):
         correct_per_class = torch.diag(conf_matrix)
         total_per_class = conf_matrix.sum(dim=1)
-        per_class_acc = correct_per_class / (total_per_class + 1e-10)
+        per_class_acc = 100* correct_per_class / (total_per_class + 1e-10)
         avg_per_class_acc = self.nanmean(per_class_acc)
         return avg_per_class_acc
 
     def eval_metrics(self, true, pred, num_classes):
-        hist = torch.zeros((num_classes, num_classes))
+        matrix = torch.zeros((num_classes, num_classes))
         for t, p in zip(true, pred):
-            hist += self._fast_conf_matrix(t.flatten(), p.flatten(), num_classes)
-        overall_acc = self.overall_pixel_acc(hist)
-        avg_per_class_acc = self.per_class_pixel_acc(hist)
-        return overall_acc, avg_per_class_acc
+            matrix += self._fast_conf_matrix(t.flatten(), p.flatten(), num_classes)
+        overall_acc = self.overall_pixel_acc(matrix)
+        avg_per_class_acc = self.per_class_pixel_acc(matrix)
+        mean_IU_2 = self.mean_IU_2(matrix)
+        return overall_acc, avg_per_class_acc,mean_IU_2
 
 
  #pixel accuracy * 1 / ( sommatoria ( falsi negativi - pixel correttamente classificati))  * 1 / numero di classi   ``#        """ Calculate mean Intersection over Union """
@@ -204,6 +214,7 @@ class Trainer:
             pixel_acc_class = 0.0
             start_epoch = time.time()
             print_number = 0
+            mean_IU_2 =0.0
             # Iterate over data.
             for I, data in enumerate(iter(self.train_data_loader)):   
                 input_images, target_masks = data
@@ -225,7 +236,7 @@ class Trainer:
                     pixel_accuracy, total_train, correct_train = self.pixel_acc(labels,output_label,total_train,running_corrects)  #pixel accuracy
                     pixel_accuracy_epoch+=pixel_accuracy
 
-                    pixel_acc, pixel_acc_class = self.eval_metrics(labels, output_label, 20)
+                    pixel_acc, pixel_acc_class, mean_IU_2 = self.eval_metrics(labels.cpu(), output_label.cpu(), 22)
                     mean = self.mean_IU(labels.cpu().numpy(),output_label.cpu().numpy())
 
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
@@ -238,13 +249,15 @@ class Trainer:
                                 'minibatch: [{i}/{minibatch}]\t'
                                 'Mini Batch Time : {time}\t'
                                 'Pixel Accuracy : {acc:.4f}\t'
-                                'Pixel Accuracy : {acc2:.4f}\t'
-                                'Pixel Accuracy : {acc_class:.4f}\t'
-                                'Mean  : {mean}\t'
+                                'Pixel ACC2 : {acc2:.4f}\t'
+                                'Class Accuracy : {acc_class:.4f}\t'
+                                'Mean  : {mean:.4f}\t'
+                                'Mean  : {meann:.4f}\t'
                                 'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch,
                                 acc2 = pixel_acc, 
                                 acc_class = pixel_acc_class,
                                 acc = pixel_accuracy,
+                                meann =mean_IU_2,
                                 iter=epoch, iters=self.cfg.n_iters, mean=mean, 
                                 time=elapsed, loss=curr_loss))
             if (epoch + 1) % self.cfg.log_step == 0:
