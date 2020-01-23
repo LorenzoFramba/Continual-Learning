@@ -12,6 +12,7 @@ import numpy as np
 import os, sys
 import time
 from datetime import timedelta
+from torch.autograd import Variable
 
 try:
     import nsml
@@ -29,6 +30,8 @@ def imshow(self, img):
     npimg = img.numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
     plt.show()
+
+
 class Trainer:
     def __init__(self, train_data_loader, val_data_loader, config):     #gli passiamo i due dataset e la stringa di comandi
         self.cfg = config
@@ -151,6 +154,10 @@ class Trainer:
         iou_score = np.sum(intersection) / np.sum(union)
         return iou_score
 
+
+
+
+
     def build_model(self):
         if self.cfg.model == 'unet':        #noi usiamo U-NET, quindi bene
             self.model = unet.UNet(num_classes=21, in_dim=3, conv_dim=64)
@@ -181,9 +188,30 @@ class Trainer:
             print('Use data parallel model(# gpu: {})'.format(self.n_gpu))
             self.model = nn.DataParallel(self.model)        #implementa il parallelismo, se disponibile
         self.model = self.model.to(self.device)
-        if self.device == "cuda":
+        if self.n_gpu > 0:
             torch.backends.cudnn.benchmark = True
+            for state in self.optim.state.values():
+                for k, v in state.items():
+                    if torch.is_tensor(v):
+                        state[k] = v.cuda()
 
+
+    def test(self):
+        self.model.eval()
+        test_acc = 0.0
+        total_train =0.0
+        for i, (images, labels) in enumerate(self.val_data_loader):
+            if torch.cuda.is_available():
+                images = Variable(images.cuda())
+                labels = Variable(labels.cuda())
+            outputs = self.model(images)
+            _, prediction = torch.max(outputs.data, 1)
+            test_acc += prediction.eq(labels.data).sum().item()
+            #test_acc += torch.sum(prediction == labels.data)
+            total_train += labels.nelement() 
+
+        test_acc = 100 * test_acc / total_train #len(self.val_data_loader.dataset)
+        return test_acc
 
 
     def train_val(self):
@@ -196,6 +224,7 @@ class Trainer:
               f" epoch : [{self.cfg.n_iters}]"
               f" iterations per epoch: {iters_per_epoch}")
         while epoch < self.cfg.n_iters:
+            
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
             print('-' * 10)
             self.scheduler.step()
@@ -210,13 +239,20 @@ class Trainer:
             pixel_acc_class = 0.0
             start_epoch = time.time()
             print_number = 0
+<<<<<<< HEAD
             mean_IU_2 =0.0
+=======
+            test_acc = 0.0
+>>>>>>> devel
             # Iterate over data.
             for I, data in enumerate(iter(self.train_data_loader)):   
+               # self.model.train()
                 input_images, target_masks = data
                 start_mini_batch = time.time()
                 inputs = input_images.to(self.device)       #buttiamo in GPU
                 labels = target_masks.to(self.device)       #buttiamo in GPU
+                
+
                 outputs = self.model(inputs)        
                 self.reset_grad()   # resettiamo i  gradienti
                 loss = self.c_loss(outputs, labels)     #cross entropy tra l'output e quello che avremmo dovuto ottenere
@@ -234,6 +270,8 @@ class Trainer:
 
                     pixel_acc, pixel_acc_class, mean_IU_2 = self.eval_metrics(labels.cpu(), output_label.cpu(), 22)
                     mean = self.mean_IU(labels.cpu().numpy(),output_label.cpu().numpy())
+                    
+
 
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
                     tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(self.cfg.sample_save_path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  
@@ -253,7 +291,11 @@ class Trainer:
                                 acc2 = pixel_acc, 
                                 acc_class = pixel_acc_class,
                                 acc = pixel_accuracy,
+<<<<<<< HEAD
                                 meann =mean_IU_2,
+=======
+
+>>>>>>> devel
                                 iter=epoch, iters=self.cfg.n_iters, mean=mean, 
                                 time=elapsed, loss=curr_loss))
             if (epoch + 1) % self.cfg.log_step == 0:
@@ -267,6 +309,23 @@ class Trainer:
                     'Accuracy Epoch : {acc}\t'
                     'Loss Epoch: {loss:.4f}\t'.format(
                     iter=epoch, iters=self.cfg.n_iters,
+                    time_epoch=elapsed, time_start=elapsed_start,
+                    acc =pixel_accuracy_epoch / print_number,
+                    loss=running_loss / print_number))
+            if (epoch + 1) % 150 == 0:
+                test_acc = self.test()
+                seconds = time.time() - start_epoch        #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
+                elapsed = str(timedelta(seconds=seconds))
+                seconds_from_beginning = time.time() - since
+                elapsed_start = str(timedelta(seconds=seconds_from_beginning))
+                print('Iteration : [{iter}/{iters}]\t'
+                    'Epoch Time : {time_epoch}\t'
+                    'Total Time : {time_start}\t'
+                    'Accuracy Epoch : {acc}\t'
+                    'Test Accuracy  : {test}\t'
+                    'Loss Epoch: {loss:.4f}\t'.format(
+                    iter=epoch, iters=self.cfg.n_iters,
+                    test = test_acc,
                     time_epoch=elapsed, time_start=elapsed_start,
                     acc =pixel_accuracy_epoch / print_number,
                     loss=running_loss / print_number))
