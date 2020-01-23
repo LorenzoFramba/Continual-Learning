@@ -160,11 +160,9 @@ class Trainer:
         test_acc = 0.0
         total_train =0.0
         for i, (images, labels) in enumerate(self.val_data_loader):
-
             if torch.cuda.is_available():
                 images = Variable(images.cuda())
                 labels = Variable(labels.cuda())
-
             outputs = self.model(images)
             _, prediction = torch.max(outputs.data, 1)
             test_acc += prediction.eq(labels.data).sum().item()
