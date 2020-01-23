@@ -239,9 +239,7 @@ class Trainer:
             pixel_acc_class = 0.0
             start_epoch = time.time()
             print_number = 0
-<<<<<<< HEAD
             mean_IU_2 =0.0
-=======
             test_acc = 0.0
 >>>>>>> devel
             # Iterate over data.
@@ -291,11 +289,8 @@ class Trainer:
                                 acc2 = pixel_acc, 
                                 acc_class = pixel_acc_class,
                                 acc = pixel_accuracy,
-<<<<<<< HEAD
                                 meann =mean_IU_2,
-=======
 
->>>>>>> devel
                                 iter=epoch, iters=self.cfg.n_iters, mean=mean, 
                                 time=elapsed, loss=curr_loss))
             if (epoch + 1) % self.cfg.log_step == 0:
