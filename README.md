@@ -1,21 +1,11 @@
-## Semantic Segmentation
+## Continual Learning without Forgetting - Semantic Segmentation
 
-Semantic segmentation implementation using pytorch framework.
-* **Fully Convolutional Networks for Semantic Segmentation**[\[paper\]](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf) <br/>
-  *Jonathan Long, Evan Shelhamer, Trevor Darrell*
-* **U-Net: Convolutional Networks for Biomedical Image Segmentation** [\[paper\]](https://arxiv.org/abs/1505.04597) <br/>
-  *Olaf Ronneberger, Philipp Fischer, Thomas Brox*
-* **Pyramid Scene Parsing Network** [\[paper\]](https://arxiv.org/abs/1612.01105) <br/>
-  *Hengshuang Zhao, Jianping Shi, Xiaojuan Qi, Xiaogang Wang, Jiaya Jia*
-* **Learning a Discriminative Feature Network for Semantic Segmentation** [\[paper\]](http://openaccess.thecvf.com/content_cvpr_2018/CameraReady/0632.pdf) <br/>
-  *Changqian Yu, Jingbo Wang, Chao Peng, Changxin Gao, Gang Yu, Nong Sang*
+pytorch implementation of Semantic segmentation using Unet as the network. 
+
 
 
 ### Currnet
-- FCN8
 - U-Net
-- PSPNet
-- DFNet (CVPR 2018, Implemented part of network)
 
 ### Some details
 
@@ -32,8 +22,28 @@ Semantic segmentation implementation using pytorch framework.
 ***Pascal VOC 2012 / FCN8***
 <p align="center"><img width="100%" src="assets/FCN8_53_1.png" /></p>
 
-### Usage
+## Getting Started
+### Installation
+- Install PyTorch and dependencies from http://pytorch.org
+- Install torch torchvision and visdom
 
+
+```bash
+pip3 install torch torchvision
+pip3 install visdom
+```
+
+- Clone this repo:
+```bash
+git clone https://github.com/LorenzoFramba/Tesi.git
+cd Tesi
+```
+
+- Import torch and install cuda
+```bash
+import torch 
+torch.cuda.is_available()
+```
 **To train models**
 
 ```bash
@@ -43,20 +53,24 @@ python main.py --mode train --model unet --dataset voc \
 --model_save_path './models' --sample_save_path './samples'
 ```
 
-### TODO
-
-- [ ] Add Cityscape dataset
-- [ ] Add Semantic boundary dataset
-- [ ] Add poly learning rate policy
-- [ ] Change cuda dependency from nsml to local gpu
-- [x] ~~Data argumentation~~
-- [ ] DeepLab v3 / DeepLab v3+
-- [ ] Remaining part of DFNet
-- [ ] Training result
 
 ### Dependencies
 * [python 3.5+](https://www.continuum.io/downloads)
 * [PyTorch 0.4.1](http://pytorch.org/)
 
+
+
+
+* **Fully Convolutional Networks for Semantic Segmentation**[\[paper\]](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf) <br/>
+  *Jonathan Long, Evan Shelhamer, Trevor Darrell*
+* **U-Net: Convolutional Networks for Biomedical Image Segmentation** [\[paper\]](https://arxiv.org/abs/1505.04597) <br/>
+  *Olaf Ronneberger, Philipp Fischer, Thomas Brox*
+* **Continual Learning for Dense Labeling of Satellite Images** [\[paper\]](https://hal.inria.fr/hal-02276543/document) <br/>
+  *Onur Tasar, Yuliya Tarabalka, Pierre Alliez*
+* **Learning a Discriminative Feature Network for Semantic Segmentation** [\[paper\]](http://openaccess.thecvf.com/content_cvpr_2018/CameraReady/0632.pdf) <br/>
+  *Changqian Yu, Jingbo Wang, Chao Peng, Changxin Gao, Gang Yu, Nong Sang*
+  
+  
+  
 ### Contact
-*If you have any questions about codes OR find something wrong in my codes, please let me know.*
+*If you have any questions about codes, let me know! .*
