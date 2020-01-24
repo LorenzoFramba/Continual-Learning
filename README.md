@@ -2,25 +2,21 @@
 
 pytorch implementation of Semantic segmentation using Unet as the network. 
 
-
+### Some results 
+***Pascal VOC 2012 / U-Net***
+- Input -> Ground Truth -> Generated
+<p align='center'>  
+  <img src='preview.gif' />
+</p>
 
 ### Currnet
 - U-Net
 
 ### Some details
 
-* I changed some parts of network to lighten network.
+* I applied different metric algorithms .
 * I used augmented dataset. (Currently, I only applied flip operation for augmentation.)
 
-### Some results (Updated soon)
-
-*GT images-GT masks-Model predictions* <br/>
-
-***Pascal VOC 2012 / U-Net***
-<p align="center"><img width="100%" src="assets/unet_40.png" /></p>
-
-***Pascal VOC 2012 / FCN8***
-<p align="center"><img width="100%" src="assets/FCN8_53_1.png" /></p>
 
 ## Getting Started
 ### Installation
