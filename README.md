@@ -49,6 +49,12 @@ python main.py --mode train --model unet --dataset voc \
 --model_save_path './models' --sample_save_path './samples'
 ```
 
+**To load the model**
+```bash
+--path ../path
+--which_epoch 'latest' \
+--continue_train \
+```
 
 ### Dependencies
 * [python 3.5+](https://www.continuum.io/downloads)
