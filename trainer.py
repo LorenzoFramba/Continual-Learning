@@ -13,6 +13,7 @@ import os, sys
 import time
 from datetime import timedelta
 from torch.autograd import Variable
+import metrics as mt
 
 try:
     import nsml
@@ -155,10 +156,6 @@ class Trainer:
         iou_score = np.sum(intersection) / np.sum(union)
         return iou_score
 
-
-
-
-
     def build_model(self):
         if self.cfg.model == 'unet':        #noi usiamo U-NET, quindi bene
             self.model = unet.UNet(num_classes=21, in_dim=3, conv_dim=64)
@@ -235,6 +232,7 @@ class Trainer:
             total_train = 0.0
             correct_train = 0.0
             pixel_accuracy=0.0
+            pixel_2_acc=0.0
             pixel_accuracy_epoch=0.0
             pixel_acc = 0.0 
             pixel_acc_class = 0.0
@@ -269,7 +267,7 @@ class Trainer:
 
                     pixel_acc, pixel_acc_class, mean_IU_2 = self.eval_metrics(labels.cpu(), output_label.cpu(), 22)
                     mean = self.mean_IU(labels.cpu().numpy(),output_label.cpu().numpy())
-                    
+                    pixel_2_acc = mt.check_size(labels.cpu(),output_label.cpu())
 
 
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
