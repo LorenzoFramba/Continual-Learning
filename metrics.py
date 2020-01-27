@@ -11,7 +11,7 @@ def pixel_acc( mask, predicted, total_train, correct_train):
 def overall_pixel_acc( matrix):
     correct = torch.diag(matrix).sum()                      # trasforma la matrice in tensore dove gli input sono la diagonale, e ci fa la somma
     total = matrix.sum()                                    # fa la somma degli elementi della matrice
-    overall_acc = correct * 100 / (total)#                  #+ 1e-10  rapporto tra i corretti e i totali, 
+    overall_acc = correct * 100 / (total)                  #+ 1e-10  rapporto tra i corretti e i totali, 
     return overall_acc
 
 def nanmean(x):

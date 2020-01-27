@@ -15,36 +15,31 @@ def make_dir(dir):
 ########### Config Loader ###########
 
 def get_loader(config):
-    if config.dataset == 'voc':
-        transform = transforms.Compose([                                #unisce varie trasformazioni assieme
-                transforms.Pad(10),                                     #crea un paddig
-                transforms.CenterCrop((config.h_image_size, config.w_image_size)),      #fa crop al centro, ma di quanto??
-                transforms.ToTensor(),                                  #trasforma l'immagine in tensor ( con C x H x W, cioe Channels, Height and Width)
-                transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))  #normalizza il tensor nella media e deviazione standard
-        ])
+    transform = transforms.Compose([                                #unisce varie trasformazioni assieme
+            transforms.Pad(10),                                     #crea un paddig
+            transforms.CenterCrop((config.h_image_size, config.w_image_size)),      #fa crop al centro, ma di quanto??
+            transforms.ToTensor(),                                  #trasforma l'immagine in tensor ( con C x H x W, cioe Channels, Height and Width)
+            transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))  #normalizza il tensor nella media e deviazione standard
+    ])
 
-        train_data_set = VOC(root=config.path,                          #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
-                             image_size=(config.h_image_size, config.w_image_size),  #h_image_size e w_image_size  sono 256 come argomento
-                             dataset_type='train',
-                             transform=transform)
-        train_data_loader = DataLoader(train_data_set,                  #crea un dataset con un batch size
-                                       batch_size=config.train_batch_size,  # 16 come argomento
-                                       shuffle=True,
-                                       drop_last=True,
-                                       num_workers=config.num_workers, pin_memory=True)            #true vuol dire che per ogni epoca, il dataset viene mescolato
+    train_data_set = VOC(root=config.path,                          #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
+                         image_size=(config.h_image_size, config.w_image_size),  #h_image_size e w_image_size  sono 256 come argomento
+                         dataset_type='train',
+                         transform=transform)
+    train_data_loader = DataLoader(train_data_set,                  #crea un dataset con un batch size
+                                   batch_size=config.train_batch_size,  # 16 come argomento
+                                   shuffle=True,
+                                   drop_last=True,
+                                   num_workers=config.num_workers, pin_memory=True)            #true vuol dire che per ogni epoca, il dataset viene mescolato
 
-        val_data_set = VOC(root=config.path,                            #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
-                           image_size=(config.h_image_size, config.w_image_size),#h_image_size e w_image_size  sono 256 come argomento
-                           dataset_type='val',
-                           transform=transform)
-        val_data_loader = DataLoader(train_data_set,                    #crea un dataset con un batch size
-                                     batch_size=config.val_batch_size,  #16 come argomento
-                                     shuffle=False,
-                                     num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
-    elif config.dataset == 'gta':
-        # TODO:
-        pass
-
+    val_data_set = VOC(root=config.path,                            #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
+                        image_size=(config.h_image_size, config.w_image_size),#h_image_size e w_image_size  sono 256 come argomento
+                        dataset_type='val',
+                        transform=transform)
+    val_data_loader = DataLoader(train_data_set,                    #crea un dataset con un batch size
+                        batch_size=config.val_batch_size,  #16 come argomento
+                        shuffle=False,
+                        num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
     return train_data_loader, val_data_loader                           #ritorna i due vettori
 
 
@@ -70,7 +65,7 @@ if __name__ == '__main__':
 
                                                                         #add_argument semplicemente popola il parser
     parser.add_argument('--mode', type=str, default='train', choices=['train'])
-    parser.add_argument('--model', type=str, default='fcn8', choices=['fcn8', 'unet', 'pspnet_avg',
+    parser.add_argument('--model', type=str, default='unet', choices=['unet', 'fcn8', 'pspnet_avg',
                                                                       'pspnet_max', 'dfnet'])
     parser.add_argument('--dataset', type=str, default='voc', choices=['voc'])
 
