@@ -3,7 +3,7 @@ from torch import optim
 import torch.nn as nn
 import torchvision as tv
 from torchvision import transforms
-from models import fcn, unet, pspnet, dfn
+from models import unet
 from datasets.voc import to_rgb
 import torch.backends.cudnn as cudnn
 from torch.optim.lr_scheduler import LambdaLR
