@@ -43,7 +43,7 @@ torch.cuda.is_available()
 **To train models**
 
 ```bash
-python main.py --mode train --model unet --dataset voc \
+python main.py --mode train \
 -- n_iters 10000 --train_batch_size 16 val_batch_size 16 \
 --h_image_size 256 --w_image_size 256 \
 --model_save_path './models' --sample_save_path './samples'
