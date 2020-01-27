@@ -55,7 +55,7 @@ class Trainer:
         :return: a "denormalized" tensor in range [0,1]
         """
         out = (x + 1) / 2
-        return out.clamp_(0, 1)    #ritorna il valore, 0 se minore di 0 e 1 se maggiore di 1. lo " NORMALIZZA " ( penso)
+        return out.clamp_(0, 1)    #ritorna il valore, 0 se minore di 0 e 1 se maggiore di 1. lo " NORMALIZZA "
 
     def reset_grad(self):
         self.optim.zero_grad()   #resetta il gradiente
@@ -106,9 +106,9 @@ class Trainer:
         return train_accuracy, total_train, correct_train
 
     def overall_pixel_acc(self, matrix):
-        correct = torch.diag(matrix).sum()
-        total = matrix.sum()
-        overall_acc = correct * 100 / (total)##+ 1e-10
+        correct = torch.diag(matrix).sum()   # trasforma la matrice in tensore dove gli input sono la diagonale, e ci fa la somma
+        total = matrix.sum()        # fa la somma degli elementi della matrice
+        overall_acc = correct * 100 / (total)##+ 1e-10  rapporto tra i corretti e i totali, 
         return overall_acc
 
     def _fast_conf_matrix(self,true, pred, num_classes):
@@ -130,8 +130,9 @@ class Trainer:
         avg_jacc = self.nanmean(jaccard)
         return avg_jacc
 
+#pixel accuracy per ogni classe 
     def per_class_pixel_acc(self, conf_matrix):
-        correct_per_class = torch.diag(conf_matrix)
+        correct_per_class = torch.diag(conf_matrix) 
         total_per_class = conf_matrix.sum(dim=1)
         per_class_acc = 100* correct_per_class / (total_per_class )##+ 1e-10
         avg_per_class_acc = self.nanmean(per_class_acc)
@@ -140,7 +141,7 @@ class Trainer:
     def eval_metrics(self, true, pred, num_classes):
         matrix = torch.zeros((num_classes, num_classes))
         for t, p in zip(true, pred):
-            matrix += self._fast_conf_matrix(t.flatten(), p.flatten(), num_classes)
+            matrix += self._fast_conf_matrix(t.flatten(), p.flatten(), num_classes)  #confusion matrix
         overall_acc = self.overall_pixel_acc(matrix)
         avg_per_class_acc = self.per_class_pixel_acc(matrix)
         mean_IU_2 = self.mean_IU_2(matrix)
