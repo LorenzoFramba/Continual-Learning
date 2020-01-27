@@ -1,4 +1,66 @@
 import numpy as np
+import torch
+
+
+    #numero di pixel correttamente classificati / numero di erroreamente non pixel classificati ( falsi negativi)
+def pixel_acc( mask, predicted, total_train, correct_train):
+    total_train += mask.nelement()          #conta gli elementi all'interno del tensore
+    train_accuracy = 100 * correct_train / total_train
+    return train_accuracy, total_train, correct_train
+
+def overall_pixel_acc( matrix):
+    correct = torch.diag(matrix).sum()   # trasforma la matrice in tensore dove gli input sono la diagonale, e ci fa la somma
+    total = matrix.sum()        # fa la somma degli elementi della matrice
+    overall_acc = correct * 100 / (total)##+ 1e-10  rapporto tra i corretti e i totali, 
+    return overall_acc
+
+def _fast_conf_matrix(true, pred, num_classes):
+    mask = (true >= 0) & (true < num_classes)
+    conf_matrix = torch.bincount(
+        num_classes * true[mask] + pred[mask],
+        minlength=num_classes ** 2,
+    ).reshape(num_classes, num_classes).float()
+    return conf_matrix
+
+def nanmean(x):
+    return torch.mean(x[x == x])
+
+def mean_IU_2(matrix):
+    A_inter_B = torch.diag(matrix)
+    A = matrix.sum(dim=1)
+    B = matrix.sum(dim=0)
+    jaccard = A_inter_B / (A + B - A_inter_B )##+ 1e-10
+    avg_jacc = nanmean(jaccard)
+    return avg_jacc
+
+#pixel accuracy per ogni classe 
+def per_class_pixel_acc(conf_matrix):
+    correct_per_class = torch.diag(conf_matrix) 
+    total_per_class = conf_matrix.sum(dim=1)
+    per_class_acc = 100* correct_per_class / (total_per_class )##+ 1e-10
+    avg_per_class_acc = nanmean(per_class_acc)
+    return avg_per_class_acc
+
+def eval_metrics(true, pred, num_classes):
+    matrix = torch.zeros((num_classes, num_classes))
+    for t, p in zip(true, pred):
+        matrix += _fast_conf_matrix(t.flatten(), p.flatten(), num_classes)  #confusion matrix
+    overall_acc = overall_pixel_acc(matrix)
+    avg_per_class_acc = per_class_pixel_acc(matrix)
+    mean_IU = mean_IU_2(matrix)
+    return overall_acc, avg_per_class_acc,mean_IU
+
+
+#pixel accuracy * 1 / ( sommatoria ( falsi negativi - pixel correttamente classificati))  * 1 / numero di classi   ``#        """ Calculate mean Intersection over Union """
+def mean_IU_(target, prediction):
+    intersection = np.logical_and(target, prediction)
+    union = np.logical_or(target, prediction)
+    iou_score = np.sum(intersection) / np.sum(union)
+    return iou_score
+
+
+
+
 
 def pixel_accuracy(eval_segm, gt_segm):
     '''
