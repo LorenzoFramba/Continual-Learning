@@ -281,11 +281,13 @@ class Trainer:
                                 'Mini Batch Time : {time}\t'
                                 'Pixel Accuracy : {acc:.4f}\t'
                                 'Pixel ACC2 : {acc2:.4f}\t'
+                                'Pixel 2 : {ac2:.4f}\t'
                                 'Class Accuracy : {acc_class:.4f}\t'
                                 'Mean  : {mean:.4f}\t'
                                 'Mean  : {meann:.4f}\t'
                                 'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch,
-                                acc2 = pixel_acc, 
+                                acc2 = pixel_acc,
+                                ac2 =  pixel_2_acc,
                                 acc_class = pixel_acc_class,
                                 acc = pixel_accuracy,
                                 meann =mean_IU_2,
