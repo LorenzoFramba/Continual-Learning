@@ -85,10 +85,10 @@ def to_rgb(xs):
         for j in range(22):
             expand_np_x[np.where(flatten_np_x == j)] = palette[j]
         rgbs[i] = expand_np_x.reshape(H, W, 3)
-    rgbs = rgbs.transpose(0, 3, 1, 2)
+    rgbs = torch.from_numpy(rgbs.transpose(0, 3, 1, 2))
     return rgbs
 
-def make_path(root):                #prende le imagini e le maschere e le unisce in un'unico item. 
+def make_path(root):                #prende le imagini e le maschere e le unisce in un'unico item.
     train_items = []            #vettore per train
     val_items = []              #vettore per validation
 
@@ -126,13 +126,11 @@ class VOC(data.Dataset):
 
     def __getitem__(self, i):
         if self.dataset_type == 'train':            #se l'elemento del vettore e' train
-            index = np.random.choice(len(self.train_items), 1)[0]  #indez a caso tra il numero di elementi nel vettore.l'1 indica che l'elemento va tolto
-            name = self.train_items[index]              #name e' l'elemento corrispondente all'index
+            name = self.train_items[i]              #name e' l'elemento corrispondente all'index
         elif self.dataset_type == 'val':
-            index = np.random.choice(len(self.val_items), 1)[0]
-            name = self.val_items[index]
+            name = self.val_items[i]
 
-        image = Image.open(name[0]).convert('RGB')  #image 
+        image = Image.open(name[0]).convert('RGB')  #image
         mask = Image.open(name[1]).convert('RGB')
 
         if self.transform:
@@ -155,7 +153,7 @@ if __name__ == "__main__":
     print(sys.path[0])
     transform = transforms.Compose([transforms.Resize(128), transforms.ToTensor()])
     data_set = VOC(root="./datasets", image_size=128, dataset_type='train', transform=transform, target_transform=to_mask)
-    for data in data_set: 
+    for data in data_set:
         print(np.array(data[0]).shape, np.array(data[1]).shape)
     # np.set_printoptions(threshold=np.nan)
     print(data_set[0][1].type())
