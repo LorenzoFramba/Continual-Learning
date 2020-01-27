@@ -31,8 +31,8 @@ pip3 install visdom
 
 - Clone this repo:
 ```bash
-git clone https://github.com/LorenzoFramba/Tesi.git
-cd Tesi
+git clone https://github.com/LorenzoFramba/Continual-Learning.git
+cd Continual-Learning
 ```
 
 - Import torch and install cuda
