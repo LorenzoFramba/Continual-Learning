@@ -103,18 +103,8 @@ class Trainer:
 
     ########### model builder ###########
     def build_model(self):
-        if self.cfg.model == 'unet':                                                    #noi usiamo U-NET, quindi bene
-            self.model = unet.UNet(num_classes=21, in_dim=3, conv_dim=64)
-        elif self.cfg.model == 'fcn8':
-            self.model = fcn.FCN8(num_classes=21)
-        elif self.cfg.model == 'pspnet_avg':
-            self.model = pspnet.PSPNet(num_classes=21, pool_type='avg')
-        elif self.cfg.model == 'pspnet_max':
-            self.model = pspnet.PSPNet(num_classes=21, pool_type='max')
-        elif self.cfg.model == 'dfnet':
-            self.model = dfn.SmoothNet(num_classes=21,
-                                       h_image_size=self.cfg.h_image_size,              #settiamo la dimensione H
-                                       w_image_size=self.cfg.w_image_size)              #settiamo la dimensione W
+        
+        self.model = unet.UNet(num_classes=21, in_dim=3, conv_dim=64)
         self.optim = optim.Adam(self.model.parameters(),                                #usiamo adam per ottimizzazione stocastica come OPTIM, passangogli i parametri
                                 lr=self.cfg.lr,                                         #settiamo il learning rate
                                 betas=[self.cfg.beta1, self.cfg.beta2])                 #le due Beta, cioe' la probabilita' di accettare l'ipotesi quando e' falsa  (coefficients used for computing running averages of gradient and its square )
