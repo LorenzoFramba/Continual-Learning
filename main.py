@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
                                                                         #add_argument semplicemente popola il parser
     parser.add_argument('--mode', type=str, default='train', choices=['train'])
-    parser.add_argument('--model', type=str, default='unet', choices=['fcn8', 'unet', 'pspnet_avg',
+    parser.add_argument('--model', type=str, default='unet', choices=['unet', 'fcn8', 'pspnet_avg',
                                                                       'pspnet_max', 'dfnet'])
     parser.add_argument('--dataset', type=str, default='voc', choices=['voc'])
 
