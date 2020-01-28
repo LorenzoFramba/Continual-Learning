@@ -71,167 +71,165 @@ def mean_IU_(target, prediction):
     return iou_score
 
 
-def pixel_accuracy(eval_segm, gt_segm):
+def pixel_accuracy(prediction, groud_truth):
   
-  #  sum_i(n_ii) / sum_i(t_i) #
-    
+  #  true_positives / pixel_totali_i #
 
-    check_size(eval_segm, gt_segm)
+    check_size(prediction, groud_truth)                          #controllo se le matrici hanno la stessa dimensione
 
-    cl, n_cl = extract_classes(gt_segm)
-    eval_mask, gt_mask = extract_both_masks(eval_segm, gt_segm, cl, n_cl)
+    classi, numero_classi = extract_classes(groud_truth)                  #ritorna la dimensione di groud_truth, togliendo gli elementi comuni
+    prediction_mask, groud_truth_mask = extract_both_masks(prediction, groud_truth, classi, numero_classi)     #ritorna array dove gli elementi sono uguali a quelli del prediction
 
-    sum_n_ii = 0
-    sum_t_i  = 0
+    true_positives = 0
+    pixel_totali_i  = 0
 
-    for i, c in enumerate(cl):
-        curr_eval_mask = eval_mask[i, :, :]
-        curr_gt_mask = gt_mask[i, :, :]
+    for i, classe in enumerate(classi):
+        curr_prediction_mask = prediction_mask[i, :, :]             #crea una copia del prediction mask
+        curr_groud_truth_mask = groud_truth_mask[i, :, :]     #crea una copia del groud_truth mask
 
-        sum_n_ii += np.sum(np.logical_and(curr_eval_mask, curr_gt_mask))
-        sum_t_i  += np.sum(curr_gt_mask)
+        true_positives += np.sum(np.logical_and(curr_prediction_mask, curr_groud_truth_mask))  
+        pixel_totali_i  += np.sum(curr_groud_truth_mask)       #somma di tutti i pixel della groud_truth mask
  
-    if (sum_t_i == 0):
+    if (pixel_totali_i == 0):
         pixel_accuracy_ = 0
     else:
-        pixel_accuracy_ = sum_n_ii / sum_t_i
+        pixel_accuracy_ = ( true_positives * 100 ) / pixel_totali_i
 
     return pixel_accuracy_
 
-def mean_accuracy(eval_segm, gt_segm):
+def mean_accuracy(prediction, groud_truth):
 
-    #    (1/n_cl) sum_i(n_ii/t_i)    #
+    #   (true_positives / pixel_totali_i) / numero_di_groud_truth_diversi   #
     
+    check_size(prediction, groud_truth)                                                                  #controllo se le matrici hanno la stessa dimensione
 
-    check_size(eval_segm, gt_segm)
+    classi, numero_classi = extract_classes(groud_truth)                                                 #estraggo groud_truth e tolgo i duplicati
+    prediction_mask, groud_truth_mask = extract_both_masks(prediction, groud_truth, classi, numero_classi)        #ritorna array dove gli elementi sono uguali a quelli del prediction
 
-    cl, n_cl = extract_classes(gt_segm)
-    eval_mask, gt_mask = extract_both_masks(eval_segm, gt_segm, cl, n_cl)
+    accuracy = list([0]) * numero_classi                                                            #e' una lista che e' lunga tanto il numero di classi
 
-    accuracy = list([0]) * n_cl
+    for i, classe in enumerate(classi):                              
+        curr_prediction_mask = prediction_mask[i, :, :]                                                     #creo copia di prediction mask
+        curr_groud_truth_mask = groud_truth_mask[i, :, :]                                             #creo copia di groud_truth mask
 
-    for i, c in enumerate(cl):
-        curr_eval_mask = eval_mask[i, :, :]
-        curr_gt_mask = gt_mask[i, :, :]
-
-        n_ii = np.sum(np.logical_and(curr_eval_mask, curr_gt_mask))
-        t_i  = np.sum(curr_gt_mask)
+        true_positives = np.sum(np.logical_and(curr_prediction_mask, curr_groud_truth_mask))               #come prima faccio la somma di tutti i punti che sono uguali
+        pixel_totali_i  = np.sum(curr_groud_truth_mask)                                                #somma di tutti i pixel della prediction mask ( cioe' delle classi )                                     
  
-        if (t_i != 0):
-            accuracy[i] = n_ii / t_i
+        if (pixel_totali_i != 0):                                                       
+            accuracy[i] = true_positives / pixel_totali_i                        
 
-    mean_accuracy_ = np.mean(accuracy)
+    mean_accuracy_ = np.mean(accuracy)                                                              #calcola la media della accuracy per tutta la lista 
     return mean_accuracy_
 
-def mean_IU(eval_segm, gt_segm):
+def mean_IoU(prediction, groud_truth):
     
-    # (1/n_cl) * sum_i(n_ii / (t_i + sum_j(n_ji) - n_ii))# 
+    # (1/numero_classi) * sum_i(true_positives / (pixel_totali_i + sum_j(n_ji) - true_positives))# 
     
 
-    check_size(eval_segm, gt_segm)
+    check_size(prediction, groud_truth)                                                                  #controllo se le matrici hanno la stessa dimensione
 
-    cl, n_cl   = union_classes(eval_segm, gt_segm)
-    _, n_cl_gt = extract_classes(gt_segm)
-    eval_mask, gt_mask = extract_both_masks(eval_segm, gt_segm, cl, n_cl)
+    classi, numero_classi   = union_classes(prediction, groud_truth)
+    _, numero_classi_ground_truth = extract_classes(groud_truth)
+    prediction_mask, groud_truth_mask = extract_both_masks(prediction, groud_truth, classi, numero_classi)
 
-    IU = list([0]) * n_cl
+    IoU = list([0]) * numero_classi
 
-    for i, c in enumerate(cl):
-        curr_eval_mask = eval_mask[i, :, :]
-        curr_gt_mask = gt_mask[i, :, :]
+    for i, c in enumerate(classi):
+        curr_prediction_mask = prediction_mask[i, :, :]                                                 #fa una copia del predicted
+        curr_groud_truth_mask = groud_truth_mask[i, :, :]                                               #fa una copia del groud truth
  
-        if (np.sum(curr_eval_mask) == 0) or (np.sum(curr_gt_mask) == 0):
+        if (np.sum(curr_prediction_mask) == 0) or (np.sum(curr_groud_truth_mask) == 0):                 #se la somma e' 0, esce dal loop
             continue
 
-        n_ii = np.sum(np.logical_and(curr_eval_mask, curr_gt_mask))
-        t_i  = np.sum(curr_gt_mask)
-        n_ij = np.sum(curr_eval_mask)
+        true_positives = np.sum(np.logical_and(curr_prediction_mask, curr_groud_truth_mask))              
+        pixel_totali_i  = np.sum(curr_groud_truth_mask)
+        false_positives = np.sum(curr_prediction_mask)
 
-        IU[i] = n_ii / (t_i + n_ij - n_ii)
+        IoU[i] = true_positives / (pixel_totali_i + false_positives - true_positives)
  
-    mean_IU_ = np.sum(IU) / n_cl_gt
-    return mean_IU_
+    mean_IoU_ = np.sum(IoU) / numero_classi_ground_truth                                                #fa la media per classe
+    return mean_IoU_
 
-def frequency_weighted_IU(eval_segm, gt_segm):
+def frequency_weighted_IU(prediction, groud_truth):
     
-    # sum_k(t_k)^(-1) * sum_i((t_i*n_ii)/(t_i + sum_j(n_ji) - n_ii))# 
+    # sum_k(t_k)^(-1) * sum_i((pixel_totali_i*true_positives)/(pixel_totali_i + sum_j(n_ji) - true_positives))# 
 
-    check_size(eval_segm, gt_segm)
+    check_size(prediction, groud_truth)                                                                 #controllo se le matrici hanno la stessa dimensione
 
-    cl, n_cl = union_classes(eval_segm, gt_segm)
-    eval_mask, gt_mask = extract_both_masks(eval_segm, gt_segm, cl, n_cl)
+    classi, numero_classi = union_classes(prediction, groud_truth)                                          #unisce le classi, confrontando gli elementi uguali
+    prediction_mask, groud_truth_mask = extract_both_masks(prediction, groud_truth, classi, numero_classi)
 
-    frequency_weighted_IU_ = list([0]) * n_cl
+    frequency_weighted_IU_ = list([0]) * numero_classi                                                  #lista lunga il numero di classi
 
-    for i, c in enumerate(cl):
-        curr_eval_mask = eval_mask[i, :, :]
-        curr_gt_mask = gt_mask[i, :, :]
+    for i, classi in enumerate(cl):
+        curr_prediction_mask = prediction_mask[i, :, :]                                                 #copia del prediction
+        curr_groud_truth_mask = groud_truth_mask[i, :, :]                                               #copia del ground truth
  
-        if (np.sum(curr_eval_mask) == 0) or (np.sum(curr_gt_mask) == 0):
+        if (np.sum(curr_prediction_mask) == 0) or (np.sum(curr_groud_truth_mask) == 0):                 #se la somma dei pixel = 0, esce dal loop
             continue
 
-        n_ii = np.sum(np.logical_and(curr_eval_mask, curr_gt_mask))
-        t_i  = np.sum(curr_gt_mask)
-        n_ij = np.sum(curr_eval_mask)
+        true_positives = np.sum(np.logical_and(curr_prediction_mask, curr_groud_truth_mask))              
+        pixel_totali_i  = np.sum(curr_groud_truth_mask)
+        false_positives = np.sum(curr_prediction_mask)
 
-        frequency_weighted_IU_[i] = (t_i * n_ii) / (t_i + n_ij - n_ii)
+        frequency_weighted_IU_[i] = (pixel_totali_i * true_positives) / (pixel_totali_i + false_positives - true_positives)
  
-    sum_k_t_k = get_pixel_area(eval_segm)
+    sum_k_t_k = get_pixel_area(prediction)
     
-    frequency_weighted_IU_ = np.sum(frequency_weighted_IU_) / sum_k_t_k
+    frequency_weighted_IU_ = np.sum(frequency_weighted_IU_) / sum_k_t_k                                 #media per classe
     return frequency_weighted_IU_
 
 
-#Auxiliary functions used during evaluation. #
+#Funzioni ausiliari per evaluation #
 
-def get_pixel_area(segm):
-    return segm.shape[0] * segm.shape[1]
+def get_pixel_area(segmento):
+    return segmento.shape[0] * segmento.shape[1]
 
-def extract_both_masks(eval_segm, gt_segm, cl, n_cl):
-    eval_mask = extract_masks(eval_segm, cl, n_cl)
-    gt_mask   = extract_masks(gt_segm, cl, n_cl)
+def extract_both_masks(prediction, groud_truth, classi, numero_classi):
+    prediction_mask = extract_masks(prediction, classi, numero_classi)          
+    groud_truth_mask   = extract_masks(groud_truth, classi, numero_classi)
 
-    return eval_mask, gt_mask
+    return prediction_mask, groud_truth_mask
 
-def extract_classes(segm):
-    cl = np.unique(segm)
-    n_cl = len(cl)
+def extract_classes(segmento):
+    classi = np.unique(segmento)                                         #elimina i doppioni
+    numero_classi = len(classi)                                          #ritorna la lunghezza della mia tupla
 
-    return cl, n_cl
+    return classi, numero_classi                                         #ritorna la tupla senza doppioni e la sua dimensione( cioe' quante classi abbiamo)
 
-def union_classes(eval_segm, gt_segm):
-    eval_cl, _ = extract_classes(eval_segm)
-    gt_cl, _   = extract_classes(gt_segm)
+def union_classes(prediction, groud_truth):                      
+    prediction_cl, _ = extract_classes(prediction)                               #ritorna tupla senza doppioni di prediction
+    groud_truth_cl, _ = extract_classes(groud_truth)                       #ritorna tupla senza doppioni di groud_truth
 
-    cl = np.union1d(eval_cl, gt_cl)
-    n_cl = len(cl)
+    classi = np.union1d(prediction_cl, groud_truth_cl)                        #ritorna l'unione dei 2 array
+    numero_classi = len(classi)                                          #ritorna la lunghezza dell'unione
 
-    return cl, n_cl
+    return classi, numero_classi                                         #ritorna l'unione e la lunghezza
 
-def extract_masks(segm, cl, n_cl):
-    h, w  = segm_size(segm)
-    masks = np.zeros((n_cl, h, w))
+def extract_masks(segmento, classi, numero_classi):                  
+    h, w  = segmento(segmento)                                           #ritorna la dimensione del tensore
+    masks = np.zeros((numero_classi, h, w))                              #crea array di 3 dimensioni con W H di input, piu' gli elementi di prediction senza duplicati   
 
-    for i, c in enumerate(cl):
-        masks[i, :, :] = segm == c
+    for i, classe in enumerate(classi):
+        masks[i, :, :] = segmento == classe                              #ritorna una matrice dove gli elementi ( per il numero di classi, sono uguali agli elementi del prediction in quella posizione)
 
     return masks
 
-def segm_size(segm):
+def segmento_size(segmento):
     try:
-        height = segm.shape[0]
-        width  = segm.shape[1]
+        height = segmento.shape[0]
+        width  = segmento.shape[1]
     except IndexError:
         raise
 
     return height, width
 
-def check_size(eval_segm, gt_segm):
-    h_e, w_e = segm_size(eval_segm)
-    h_g, w_g = segm_size(gt_segm)
+def check_size(prediction, groud_truth):
+    h_e, w_e = segmento_size(prediction)                        #dimensione della matrice prediction
+    h_g, w_g = segmento_size(groud_truth)                    #dimensione della matrice groud_truth
 
     if (h_e != h_g) or (w_e != w_g):
-        raise EvalSegErr("DiffDim: Different dimensions of matrices!")
+        raise EvalSegErr("Different dimensions of matrices!")
 
 '''
 Exceptions
