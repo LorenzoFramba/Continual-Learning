@@ -152,7 +152,7 @@ def union_classes(prediction, groud_truth):
     return classi, numero_classi                                         #ritorna l'unione e la lunghezza
 
 def extract_masks(segmento, classi, numero_classi):                  
-    h, w  = segmento(segmento)                                           #ritorna la dimensione del tensore
+    h, w  = segmento_size(segmento)                                           #ritorna la dimensione del tensore
     masks = np.zeros((numero_classi, h, w))                              #crea array di 3 dimensioni con W H di input, piu' gli elementi di prediction senza duplicati   
 
     for i, classe in enumerate(classi):
