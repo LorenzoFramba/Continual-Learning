@@ -115,7 +115,7 @@ def frequency_weighted_IU(prediction, groud_truth):
 
     frequency_weighted_IU_ = list([0]) * numero_classi                                                          #lista lunga il numero di classi
 
-    for i, classi in enumerate(cl):
+    for i, classi in enumerate(classi):
         curr_prediction_mask = prediction_mask[i, :, :]                                                         #copia del prediction
         curr_groud_truth_mask = groud_truth_mask[i, :, :]                                                       #copia del ground truth
  
@@ -163,16 +163,16 @@ def union_classes(prediction, groud_truth):
 def extract_masks(segmento, classi, numero_classi):                  
     h, w  = segmento_size(segmento)                                                                             #ritorna la dimensione del tensore
     masks = np.zeros((numero_classi, h, w))                                                                     #crea array di 3 dimensioni con W H di input, piu' gli elementi di prediction senza duplicati   
-
     for i, classe in enumerate(classi):
+        print(segmento==classe)
         masks[i, :, :] = segmento == classe                                                                     #ritorna una matrice dove gli elementi ( per il numero di classi, sono uguali agli elementi del prediction in quella posizione)
 
     return masks
 
 def segmento_size(segmento):
     try:
-        height = segmento.shape[0]
-        width  = segmento.shape[1]
+        height = segmento.shape[-2]
+        width  = segmento.shape[-1]
     except IndexError:
         raise
     return height, width
