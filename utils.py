@@ -1,3 +1,4 @@
+import torch
 class AverageMeter(object):
     """Computes and stores the average and current value"""
     def __init__(self):
@@ -6,17 +7,19 @@ class AverageMeter(object):
         self.avg = None
         self.sum = None
         self.count = None
+        self.confusion_matrix = None
 
-    def initialize(self, val, weight):
+    def initialize(self, val, weight, classes = 22):
         self.val = val
         self.avg = val
         self.sum = val * weight
         self.count = weight
         self.initialized = True
+        self.confusion_matrix = torch.zeros(classes, classes)
 
-    def update(self, val, weight=1):
+    def update(self, val, weight=1, classes = 22):
         if not self.initialized:
-            self.initialize(val, weight)
+            self.initialize(val, weight, classes)
         else:
             self.add(val, weight)
 
@@ -31,3 +34,9 @@ class AverageMeter(object):
 
     def average(self):
         return self.avg
+
+    def get_confusion_matrix(self):
+        return self.confusion_matrix
+
+    def update_confusion_matrix(self, confusion_matrix):
+        self.confusion_matrix = confusion_matrix

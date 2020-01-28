@@ -145,6 +145,7 @@ class Trainer:
             acc_meter_epoch = AverageMeter()
             intersection_meter_epoch = AverageMeter()
             union_meter_epoch = AverageMeter()
+            class_acc_meter_epoch = AverageMeter(22)
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
             print('-' * 10)
             self.scheduler.step()
@@ -170,6 +171,7 @@ class Trainer:
                     acc_meter_mb = AverageMeter()
                     intersection_meter_mb = AverageMeter()
                     union_meter_mb = AverageMeter()
+                    class_acc_meter_mb = AverageMeter(22)
                     ########### statistics  ###########
                     curr_loss = loss.item()                                         #ritorna il valore del tensore 
                     running_loss += curr_loss                                       #average, DO NOT multiply by the batch size
@@ -190,9 +192,16 @@ class Trainer:
                     acc_meter_mb.update(acc, pix)
                     intersection_meter_mb.update(intersection)
                     union_meter_mb.update(union)
+                    confusion_matrix = mt.class_accuracy(output_label.cpu(),
+                                                         labels.cpu,
+                                                         class_acc_meter_mb.get_confusion_matrix())
+                    confusion_matrix_epoch = mt.class_accuracy(output_label.cpu(),
+                                                         labels.cpu,
+                                                         class_acc_meter_epoch.get_confusion_matrix())
                     acc_meter_epoch.update(acc, pix)
                     intersection_meter_epoch.update(intersection)
                     union_meter_epoch.update(union)
+                    class_acc_meter_epoch.update_confusion_matrix(confusion_matrix_epoch)
                     ########### printing out the model ###########
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
                     tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(self.cfg.sample_save_path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  
@@ -201,6 +210,9 @@ class Trainer:
                     seconds = time.time() - start_mini_batch        
                     elapsed = str(timedelta(seconds=seconds))
                     iou = intersection_meter_mb.sum / (union_meter_mb.sum + 1e-10)
+                    classes_acc = confusion_matrix.diag()/(confusion_matrix.sum(1)+ 1e-10) * 100
+                    for i, class_acc in enumerate(classes_acc):
+                        print('class [{}], Mean acc: {:.4f}'.format(i, class_acc))
                     for i, _iou in enumerate(iou):
                         print('class [{}], IoU: {:.4f}'.format(i, _iou))
                     print('Iteration : [{iter}/{iters}]\t'
@@ -223,6 +235,12 @@ class Trainer:
                     acc_meter_epoch.update(acc, pix)
                     intersection_meter_epoch.update(intersection)
                     union_meter_epoch.update(union)
+                    confusion_matrix_epoch = mt.class_accuracy(
+                        output_label.cpu(),
+                        labels.cpu,
+                        class_acc_meter_epoch.get_confusion_matrix())
+                    class_acc_meter_epoch.update_confusion_matrix(
+                        confusion_matrix_epoch)
 
             ########### one epoch done  ###########                   
             if (epoch + 1) % self.cfg.log_step == 0:
@@ -231,6 +249,10 @@ class Trainer:
                 seconds_from_beginning = time.time() - since
                 elapsed_start = str(timedelta(seconds=seconds_from_beginning))
                 iou = intersection_meter_epoch.sum / (union_meter_epoch.sum + 1e-10)
+                classes_acc = class_acc_meter_epoch.confusion_matrix.diag() / (
+                            class_acc_meter_epoch.confusion_matrix.sum(1) + 1e-10) * 100
+                for i, class_acc in enumerate(classes_acc):
+                    print('class [{}], Mean acc: {:.4f}'.format(i, class_acc))
                 for i, _iou in enumerate(iou):
                     print('class [{}], IoU: {:.4f}'.format(i, _iou))
                 print('Iteration : [{iter}/{iters}]\t'
@@ -247,21 +269,25 @@ class Trainer:
 
             ########### eval phase  ###########
             if (epoch + 1) % 150 == 0:
-                test_acc, iou = self.test()
+                test_acc, iou, confusion_matrix = self.test()
                 seconds = time.time() - start_epoch                                 #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                 elapsed = str(timedelta(seconds=seconds))
                 seconds_from_beginning = time.time() - since
                 elapsed_start = str(timedelta(seconds=seconds_from_beginning))
+                classes_acc = confusion_matrix.diag() / (
+                            confusion_matrix.sum(1) + 1e-10) * 100
+                for i, class_acc in enumerate(classes_acc):
+                    print('class [{}], Mean acc: {:.4f}'.format(i, class_acc))
+                for i, _iou in enumerate(iou):
+                    print('class [{}], IoU: {:.4f}'.format(i, _iou))
                 print('Iteration : [{iter}/{iters}]\t'
                     'Epoch Time : {time_epoch}\t'
                     'Total Time : {time_start}\t'
-                    'Test Mean IOU : {iou}\t'
                     'Test Accuracy  : {test}\t'
                     'Loss Epoch: {loss:.4f}\t'.format(
                     iter=epoch, iters=self.cfg.n_iters,
                     test = test_acc * 100,
                     time_epoch=elapsed, time_start=elapsed_start,
-                    iou = iou,
                     loss=running_loss / print_number))
             epoch +=1
 
@@ -283,6 +309,8 @@ class Trainer:
         acc_meter_test = AverageMeter()
         intersection_meter_test = AverageMeter()
         union_meter_test = AverageMeter()
+        class_acc_meter_test = AverageMeter(22)
+
         self.model.eval()
         for i, (images, labels) in enumerate(self.val_data_loader):
             if torch.cuda.is_available():
@@ -297,6 +325,12 @@ class Trainer:
             acc_meter_test.update(acc, pix)
             intersection_meter_test.update(intersection)
             union_meter_test.update(union)
+            confusion_matrix_epoch = mt.class_accuracy(
+                prediction.cpu(),
+                labels.cpu,
+                class_acc_meter_test.get_confusion_matrix())
+            class_acc_meter_test.update_confusion_matrix(
+                confusion_matrix_epoch)
 
         iou = intersection_meter_test.sum / (union_meter_test.sum + 1e-10)
-        return acc_meter_test.average(), iou
+        return acc_meter_test.average(), iou, class_acc_meter_test.confusion_matrix

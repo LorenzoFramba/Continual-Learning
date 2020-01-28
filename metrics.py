@@ -216,5 +216,8 @@ def intersectionAndUnion(imPred, imLab, numClass):
     area_union = area_pred + area_lab - area_intersection
     return (area_intersection, area_union)
 
-
+def class_accuracy(preds, label, confusion_matrix):
+    for t, p in zip(label.view(-1), preds.view(-1)):
+        confusion_matrix[t.long(), p.long()] += 1
+    return confusion_matrix
 
