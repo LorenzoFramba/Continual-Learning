@@ -153,13 +153,9 @@ class Trainer:
             pixel_accuracy=0.0
             pixel_2_acc=0.0
             pixel_accuracy_epoch=0.0
-            pixel_acc = 0.0 
-            pixel_acc_class = 0.0
             start_epoch = time.time()
             print_number = 0
-            mean_IU_2 =0.0
             test_acc = 0.0
-            max_per_class_acc = 0.0
             
             ########### Iterate over data ###########
             for I, data in enumerate(iter(self.train_data_loader)):   
@@ -184,9 +180,9 @@ class Trainer:
                     pixel_accuracy, total_train, correct_train = mt.pixel_acc(labels,output_label,total_train,running_corrects)  #pixel accuracy
                     pixel_accuracy_epoch+=pixel_accuracy
 
-                    pixel_acc, pixel_acc_class, mean_IU_2, max_per_class_acc = mt.eval_metrics(labels.cpu(), output_label.cpu(), 22)
                     mean = mt.mean_IU_(labels.cpu().numpy(),output_label.cpu().numpy())
-                    pixel_2_acc = mt.frequency_weighted_IU(labels.cpu(),output_label.cpu())
+
+                    pixel_2_acc = mt.pixel_accuracy(output_label.cpu(),labels.cpu())
 
                     ########### printing out the model ###########
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
@@ -199,20 +195,11 @@ class Trainer:
                                 'minibatch: [{i}/{minibatch}]\t'
                                 'Mini Batch Time : {time}\t'
                                 'Pixel Accuracy : {acc:.4f}\t'
-                                'Pixel ACC2 : {acc2:.4f}\t'
-                                'Pixel MAX CLASS : {MAXac:.4f}\t'
                                 'Pixel 2 : {ac2:.4f}\t'
-                                'Class Accuracy : {acc_class:.4f}\t'
                                 'Mean  : {mean:.4f}\t'
-                                'Mean  : {meann:.4f}\t'
                                 'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch,
-                                acc2 = pixel_acc,
                                 ac2 =  pixel_2_acc,
-                                MAXac = max_per_class_acc,
-                                acc_class = pixel_acc_class,
                                 acc = pixel_accuracy,
-                                meann =mean_IU_2,
-
                                 iter=epoch, iters=self.cfg.n_iters, mean=mean, 
                                 time=elapsed, loss=curr_loss))
 
