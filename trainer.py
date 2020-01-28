@@ -166,8 +166,7 @@ class Trainer:
                 input_images, target_masks = data
                 start_mini_batch = time.time()
                 inputs = input_images.to(self.device)                               #transfer in GPU
-                labels = target_masks.to(self.device)                               #transfer in GPU
-                
+                labels = target_masks.to(self.device)                               #transfer in GPU  
 
                 outputs = self.model(inputs)        
                 self.reset_grad()                                                   #resettiamo i  gradienti
@@ -187,7 +186,7 @@ class Trainer:
 
                     pixel_acc, pixel_acc_class, mean_IU_2, max_per_class_acc = mt.eval_metrics(labels.cpu(), output_label.cpu(), 22)
                     mean = mt.mean_IU_(labels.cpu().numpy(),output_label.cpu().numpy())
-                    #pixel_2_acc = mt.pixel_accuracy(labels.cpu(),output_label.cpu())
+                    pixel_2_acc = mt.frequency_weighted_IU(labels.cpu(),output_label.cpu())
 
                     ########### printing out the model ###########
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
