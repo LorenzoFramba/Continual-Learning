@@ -8,6 +8,7 @@ from datasets.voc import to_rgb
 import torch.backends.cudnn as cudnn
 from torch.optim.lr_scheduler import LambdaLR
 import matplotlib.pyplot as plt
+from utils import AverageMeter
 import numpy as np
 import os, sys
 import time
@@ -141,21 +142,16 @@ class Trainer:
 
         ########### train until model is fully trained  ###########
         while epoch < self.cfg.n_iters:
-            
+            acc_meter_epoch = AverageMeter()
+            intersection_meter_epoch = AverageMeter()
+            union_meter_epoch = AverageMeter()
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
             print('-' * 10)
             self.scheduler.step()
-            mean =0
             running_loss = 0.0
-            running_corrects = 0
-            total_train = 0.0
-            correct_train = 0.0
-            pixel_accuracy=0.0
-            pixel_2_acc=0.0
             pixel_accuracy_epoch=0.0
             start_epoch = time.time()
             print_number = 0
-            test_acc = 0.0
             
             ########### Iterate over data ###########
             for I, data in enumerate(iter(self.train_data_loader)):   
@@ -169,13 +165,16 @@ class Trainer:
                 loss = self.c_loss(outputs, labels)                                 #cross entropy tra l'output e quello che avremmo dovuto ottenere
                 loss.backward()                                                     #fa il gradiente
                 self.optim.step()                                                   #ottimizza tramite adam
-                if I % 1 == 0:
-                    print_number += 1 
-
+                if I % 20 == 0:
+                    print_number += 1
+                    acc_meter_mb = AverageMeter()
+                    intersection_meter_mb = AverageMeter()
+                    union_meter_mb = AverageMeter()
                     ########### statistics  ###########
                     curr_loss = loss.item()                                         #ritorna il valore del tensore 
                     running_loss += curr_loss                                       #average, DO NOT multiply by the batch size
                     output_label = torch.argmax(self.softmax(outputs), dim=1)       #argmax
+                    """
                     running_corrects += output_label.eq(labels.data).sum().item()   #running_corrects += torch.sum(output_label == labels)
                     pixel_accuracy, total_train, correct_train = mt.pixel_acc(labels,output_label,total_train,running_corrects)  #pixel accuracy
                     pixel_accuracy_epoch+=pixel_accuracy
@@ -183,7 +182,17 @@ class Trainer:
                     mean = mt.mean_IU_(labels.cpu().numpy(),output_label.cpu().numpy())
 
                     pixel_2_acc = mt.pixel_accuracy(output_label.cpu(),labels.cpu())
-
+                    """
+                    acc, pix = mt.accuracy(output_label.cpu(), labels.cpu())
+                    intersection, union =\
+                        mt.intersectionAndUnion(output_label.cpu(), labels.cpu(),
+                                                               22)
+                    acc_meter_mb.update(acc, pix)
+                    intersection_meter_mb.update(intersection)
+                    union_meter_mb.update(union)
+                    acc_meter_epoch.update(acc, pix)
+                    intersection_meter_epoch.update(intersection)
+                    union_meter_epoch.update(union)
                     ########### printing out the model ###########
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
                     tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(self.cfg.sample_save_path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  
@@ -191,17 +200,29 @@ class Trainer:
 
                     seconds = time.time() - start_mini_batch        
                     elapsed = str(timedelta(seconds=seconds))
+                    iou = intersection_meter_mb.sum / (union_meter_mb.sum + 1e-10)
+                    for i, _iou in enumerate(iou):
+                        print('class [{}], IoU: {:.4f}'.format(i, _iou))
                     print('Iteration : [{iter}/{iters}]\t'
                                 'minibatch: [{i}/{minibatch}]\t'
                                 'Mini Batch Time : {time}\t'
-                                'Pixel Accuracy : {acc:.4f}\t'
-                                'Pixel 2 : {ac2:.4f}\t'
-                                'Mean  : {mean:.4f}\t'
+                                'Pixel Accuracy : {acc:.4f}%\t'
+                                'Mean IOU : {mean:.4f}\t'
                                 'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch,
-                                ac2 =  pixel_2_acc,
-                                acc = pixel_accuracy,
-                                iter=epoch, iters=self.cfg.n_iters, mean=mean, 
+                                acc = acc_meter_mb.average()*100,
+                                iter=epoch, iters=self.cfg.n_iters, mean=iou.mean(),
                                 time=elapsed, loss=curr_loss))
+                else:
+                    output_label = torch.argmax(self.softmax(outputs),
+                                                dim=1)  # argmax
+                    acc, pix = mt.accuracy(output_label.cpu(), labels.cpu())
+                    intersection, union = \
+                        mt.intersectionAndUnion(output_label.cpu(),
+                                                labels.cpu(),
+                                                22)
+                    acc_meter_epoch.update(acc, pix)
+                    intersection_meter_epoch.update(intersection)
+                    union_meter_epoch.update(union)
 
             ########### one epoch done  ###########                   
             if (epoch + 1) % self.cfg.log_step == 0:
@@ -209,19 +230,24 @@ class Trainer:
                 elapsed = str(timedelta(seconds=seconds))
                 seconds_from_beginning = time.time() - since
                 elapsed_start = str(timedelta(seconds=seconds_from_beginning))
+                iou = intersection_meter_epoch.sum / (union_meter_epoch.sum + 1e-10)
+                for i, _iou in enumerate(iou):
+                    print('class [{}], IoU: {:.4f}'.format(i, _iou))
                 print('Iteration : [{iter}/{iters}]\t'
                     'Epoch Time : {time_epoch}\t'
                     'Total Time : {time_start}\t'
                     'Accuracy Epoch : {acc}\t'
+                      'Mean IOU : {mean:.4f}\t'
                     'Loss Epoch: {loss:.4f}\t'.format(
                     iter=epoch, iters=self.cfg.n_iters,
                     time_epoch=elapsed, time_start=elapsed_start,
-                    acc =pixel_accuracy_epoch / print_number,
+                    acc =acc_meter_epoch.average()*100,
+                    mean=iou.mean(),
                     loss=running_loss / print_number))
 
             ########### eval phase  ###########
             if (epoch + 1) % 150 == 0:
-                test_acc = self.test()
+                test_acc, iou = self.test()
                 seconds = time.time() - start_epoch                                 #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                 elapsed = str(timedelta(seconds=seconds))
                 seconds_from_beginning = time.time() - since
@@ -229,13 +255,13 @@ class Trainer:
                 print('Iteration : [{iter}/{iters}]\t'
                     'Epoch Time : {time_epoch}\t'
                     'Total Time : {time_start}\t'
-                    'Accuracy Epoch : {acc}\t'
+                    'Test Mean IOU : {iou}\t'
                     'Test Accuracy  : {test}\t'
                     'Loss Epoch: {loss:.4f}\t'.format(
                     iter=epoch, iters=self.cfg.n_iters,
-                    test = test_acc,
+                    test = test_acc * 100,
                     time_epoch=elapsed, time_start=elapsed_start,
-                    acc =pixel_accuracy_epoch / print_number,
+                    iou = iou,
                     loss=running_loss / print_number))
             epoch +=1
 
@@ -254,18 +280,23 @@ class Trainer:
 
     ########### eval phase ###########
     def test(self):
+        acc_meter_test = AverageMeter()
+        intersection_meter_test = AverageMeter()
+        union_meter_test = AverageMeter()
         self.model.eval()
-        test_acc = 0.0
-        total_train =0.0
         for i, (images, labels) in enumerate(self.val_data_loader):
             if torch.cuda.is_available():
                 images = Variable(images.cuda())
                 labels = Variable(labels.cuda())
             outputs = self.model(images)
             _, prediction = torch.max(outputs.data, 1)
-            test_acc += prediction.eq(labels.data).sum().item()
-            total_train += labels.nelement() 
+            acc, pix = mt.accuracy(prediction.cpu(), labels.cpu())
+            intersection, union = \
+                mt.intersectionAndUnion(prediction.cpu(), labels.cpu(),
+                                        22)
+            acc_meter_test.update(acc, pix)
+            intersection_meter_test.update(intersection)
+            union_meter_test.update(union)
 
-        test_acc = 100 * test_acc / total_train                                         #len(self.val_data_loader.dataset)
-        return test_acc
-        
+        iou = intersection_meter_test.sum / (union_meter_test.sum + 1e-10)
+        return acc_meter_test.average(), iou
