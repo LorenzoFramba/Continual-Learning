@@ -145,7 +145,7 @@ class Trainer:
             acc_meter_epoch = AverageMeter()
             intersection_meter_epoch = AverageMeter()
             union_meter_epoch = AverageMeter()
-            class_acc_meter_epoch = AverageMeter(22)
+            class_acc_meter_epoch = AverageMeter().initialize(0,0, 22)
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
             print('-' * 10)
             self.scheduler.step()
@@ -171,7 +171,7 @@ class Trainer:
                     acc_meter_mb = AverageMeter()
                     intersection_meter_mb = AverageMeter()
                     union_meter_mb = AverageMeter()
-                    class_acc_meter_mb = AverageMeter(22)
+                    class_acc_meter_mb = AverageMeter().initialize(0,0, 22)
                     ########### statistics  ###########
                     curr_loss = loss.item()                                         #ritorna il valore del tensore 
                     running_loss += curr_loss                                       #average, DO NOT multiply by the batch size
@@ -193,10 +193,10 @@ class Trainer:
                     intersection_meter_mb.update(intersection)
                     union_meter_mb.update(union)
                     confusion_matrix = mt.class_accuracy(output_label.cpu(),
-                                                         labels.cpu,
+                                                         labels.cpu(),
                                                          class_acc_meter_mb.get_confusion_matrix())
                     confusion_matrix_epoch = mt.class_accuracy(output_label.cpu(),
-                                                         labels.cpu,
+                                                         labels.cpu(),
                                                          class_acc_meter_epoch.get_confusion_matrix())
                     acc_meter_epoch.update(acc, pix)
                     intersection_meter_epoch.update(intersection)
@@ -237,7 +237,7 @@ class Trainer:
                     union_meter_epoch.update(union)
                     confusion_matrix_epoch = mt.class_accuracy(
                         output_label.cpu(),
-                        labels.cpu,
+                        labels.cpu(),
                         class_acc_meter_epoch.get_confusion_matrix())
                     class_acc_meter_epoch.update_confusion_matrix(
                         confusion_matrix_epoch)
@@ -309,7 +309,7 @@ class Trainer:
         acc_meter_test = AverageMeter()
         intersection_meter_test = AverageMeter()
         union_meter_test = AverageMeter()
-        class_acc_meter_test = AverageMeter(22)
+        class_acc_meter_test = AverageMeter().initialize(0,0, 22)
 
         self.model.eval()
         for i, (images, labels) in enumerate(self.val_data_loader):
@@ -327,7 +327,7 @@ class Trainer:
             union_meter_test.update(union)
             confusion_matrix_epoch = mt.class_accuracy(
                 prediction.cpu(),
-                labels.cpu,
+                labels.cpu(),
                 class_acc_meter_test.get_confusion_matrix())
             class_acc_meter_test.update_confusion_matrix(
                 confusion_matrix_epoch)
