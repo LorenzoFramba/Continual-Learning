@@ -145,7 +145,8 @@ class Trainer:
             acc_meter_epoch = AverageMeter()
             intersection_meter_epoch = AverageMeter()
             union_meter_epoch = AverageMeter()
-            class_acc_meter_epoch = AverageMeter().initialize(0,0, 22)
+            class_acc_meter_epoch = AverageMeter()
+            class_acc_meter_epoch.initialize(0, 0, 22)
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
             print('-' * 10)
             self.scheduler.step()
@@ -171,7 +172,8 @@ class Trainer:
                     acc_meter_mb = AverageMeter()
                     intersection_meter_mb = AverageMeter()
                     union_meter_mb = AverageMeter()
-                    class_acc_meter_mb = AverageMeter().initialize(0,0, 22)
+                    class_acc_meter_mb = AverageMeter()
+                    class_acc_meter_mb.initialize(0,0, 22)
                     ########### statistics  ###########
                     curr_loss = loss.item()                                         #ritorna il valore del tensore 
                     running_loss += curr_loss                                       #average, DO NOT multiply by the batch size
@@ -309,7 +311,8 @@ class Trainer:
         acc_meter_test = AverageMeter()
         intersection_meter_test = AverageMeter()
         union_meter_test = AverageMeter()
-        class_acc_meter_test = AverageMeter().initialize(0,0, 22)
+        class_acc_meter_test = AverageMeter()
+        class_acc_meter_test.initialize(0,0, 22)
 
         self.model.eval()
         for i, (images, labels) in enumerate(self.val_data_loader):
