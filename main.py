@@ -1,11 +1,15 @@
 import argparse
 import os
-
+import torch
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
 from datasets.voc import VOC
 from trainer import Trainer
+import numpy as np 
+from torch.utils.data import DataLoader, TensorDataset
+from torch import Tensor
+
 
 
 def make_dir(dir):
@@ -27,28 +31,65 @@ def get_loader(config):
                                 dataset_type='train',
                                 transform=transform)
 
-        for i, ciao in enumerate(train_data_set.__len__):
-                print(train_data_set.__getitem__(2))                           
-                print(ciao)
+
                 
         train_data_loader_1 = DataLoader(train_data_set,                  #crea un dataset con un batch size
                                         batch_size=config.train_batch_size,  # 16 come argomento
                                         shuffle=True,
                                         drop_last=True,
                                         num_workers=config.num_workers, pin_memory=True) 
-                                        
-        # train_data_loader_2 = DataLoader(train_data_set,                  #crea un dataset con un batch size
-        #                                 batch_size=config.train_batch_size,  # 16 come argomento
-        #                                 shuffle=True,
-        #                                 drop_last=True,
-        #                                 num_workers=config.num_workers, pin_memory=True)   
 
-        # train_data_loader_3 = DataLoader(train_data_set,                  #crea un dataset con un batch size
-        #                                 batch_size=config.train_batch_size,  # 16 come argomento
-        #                                 shuffle=True,
-        #                                 drop_last=True,
-        #                                 num_workers=config.num_workers, pin_memory=True)   
+        print(train_data_loader_1.__len__())
 
+
+        train_data_1 = []
+        train_data_2 = []
+        train_data_3 = []
+
+
+
+
+
+
+        #i1, l1 = next(iter(trainloader))
+
+
+        for i in range(train_data_loader_1.__len__()):
+                image, mask = train_data_set.__getitem__(i)   
+                out = mask.numpy().flatten()   
+                b = np.bincount(out).argmax() 
+              
+                for h in range(len(image.numpy())):
+                        if (b<12):
+                                print("primo",b)
+                                train_data_1.append([image.numpy()[h], mask.numpy()[h]])
+                                
+                                #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
+                                trainloader_1 = DataLoader(train_data_1, batch_size=config.train_batch_size,  # 16 come argomento
+                                        shuffle=True,
+                                        drop_last=True,
+                                        num_workers=config.num_workers, pin_memory=True)
+                               
+                        elif(b<17):
+                                print("secondo",b)
+                                train_data_2.append([image.numpy()[h], mask.numpy()[h]])
+                                #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
+                                trainloader_2 = DataLoader(train_data_2, batch_size=config.train_batch_size,  # 16 come argomento
+                                        shuffle=True,
+                                        drop_last=True,
+                                        num_workers=config.num_workers, pin_memory=True)
+                                
+                        else:
+                                print("terzo",b)
+                                
+                                train_data_3.append([image.numpy()[h], mask.numpy()[h]])
+                                
+                                #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
+                                trainloader_3 = DataLoader(train_data_3, batch_size=config.train_batch_size,  # 16 come argomento
+                                        shuffle=True,
+                                        drop_last=True,
+                                        num_workers=config.num_workers, pin_memory=True)
+                                
  
                                       
         
@@ -61,18 +102,9 @@ def get_loader(config):
                                 batch_size=config.val_batch_size,  #16 come argomento
                                 shuffle=False,
                                 num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
-        # val_data_loader_2 = DataLoader(train_data_set,                    #crea un dataset con un batch size
-        #                         batch_size=config.val_batch_size,  #16 come argomento
-        #                         shuffle=False,
-        #                         num_workers=config.num_workers, pin_memory=True)
-        
-        # val_data_loader_3 = DataLoader(train_data_set,                    #crea un dataset con un batch size
-        #                         batch_size=config.val_batch_size,  #16 come argomento
-        #                         shuffle=False,
-        #                         num_workers=config.num_workers, pin_memory=True)
 
 
-        return train_data_loader_1, val_data_loader_1#,train_data_loader_2, val_data_loader_2, train_data_loader_3, val_data_loader_3                       #ritorna i due vettori
+        return trainloader_1, trainloader_2, trainloader_3, val_data_loader_1#,train_data_loader_2, val_data_loader_2, train_data_loader_3, val_data_loader_3                       #ritorna i due vettori
 
 
 def main(config):                                                       #il config sarebbe il parser con tanti argomenti dei comandi
@@ -84,18 +116,18 @@ def main(config):                                                       #il conf
         make_dir(os.path.join(config.sample_save_path, folder))         #crea le cartelle in questione
     if config.mode == 'train':
         #train_data_loader_1, val_data_loader_1,train_data_loader_2, val_data_loader_2, train_data_loader_3, val_data_loader_3 = get_loader(config)         #associa ai due dataset i valori. presi dal config
-        train_data_loader_1, val_data_loader_1= get_loader(config)         #associa ai due dataset i valori. presi dal config
+        train_data_loader_1,train_data_loader_2,train_data_loader_3, val_data_loader_1= get_loader(config)         #associa ai due dataset i valori. presi dal config
         trainer_1 = Trainer(train_data_loader=train_data_loader_1,          #fa partire il training, passando i due dataset
                          val_data_loader=val_data_loader_1,
                          config=config)
 
 
-        # trainer_2 = Trainer(train_data_loader=train_data_loader_2,          #fa partire il training, passando i due dataset
-        #                  val_data_loader=val_data_loader_2,
-        #                  config=config)
-        # trainer_3 = Trainer(train_data_loader=train_data_loader_3,          #fa partire il training, passando i due dataset
-        #                  val_data_loader=val_data_loader_3,
-        #                  config=config)                  
+        trainer_2 = Trainer(train_data_loader=train_data_loader_2,          #fa partire il training, passando i due dataset
+                          val_data_loader=val_data_loader_1,
+                          config=config)
+        trainer_3 = Trainer(train_data_loader=train_data_loader_3,          #fa partire il training, passando i due dataset
+                          val_data_loader=val_data_loader_1,
+                          config=config)                  
         
         trainer_1.train_val()                                             #ora che la classe e' stata istanziata, fa partire il training
         #trainer_2.train_val()
