@@ -178,15 +178,7 @@ class Trainer:
                     curr_loss = loss.item()                                         #ritorna il valore del tensore 
                     running_loss += curr_loss                                       #average, DO NOT multiply by the batch size
                     output_label = torch.argmax(self.softmax(outputs), dim=1)       #argmax
-                    """
-                    running_corrects += output_label.eq(labels.data).sum().item()   #running_corrects += torch.sum(output_label == labels)
-                    pixel_accuracy, total_train, correct_train = mt.pixel_acc(labels,output_label,total_train,running_corrects)  #pixel accuracy
-                    pixel_accuracy_epoch+=pixel_accuracy
-
-                    mean = mt.mean_IU_(labels.cpu().numpy(),output_label.cpu().numpy())
-
-                    pixel_2_acc = mt.pixel_accuracy(output_label.cpu(),labels.cpu())
-                    """
+                    
                     acc, pix = mt.accuracy(output_label.cpu(), labels.cpu())
                     intersection, union =\
                         mt.intersectionAndUnion(output_label.cpu(), labels.cpu(),
