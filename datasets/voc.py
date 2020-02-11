@@ -96,8 +96,8 @@ def make_path(root):                #prende le imagini e le maschere e le unisce
     mask_path = os.path.join(root, 'VOC2012', 'SegmentationClass')
     train_data_list = [l.strip('\n') for l in open(os.path.join(root, 'VOC2012',
                 'ImageSets', 'Segmentation', 'train.txt')).readlines()]
-    val_data_list = [l.strip('\n') for l in open(os.path.join(root, 'VOC2012',
-                'ImageSets', 'Segmentation', 'train.txt')).readlines()]
+    val_data_list   = [l.strip('\n') for l in open(os.path.join(root, 'VOC2012',
+                'ImageSets', 'Segmentation', 'train.txt')).readlines()]  #'train.txt'  -> val.txt ?
 
     for it in train_data_list:
         item = (os.path.join(img_path, it + '.jpg'), os.path.join(mask_path, it + '.png'))

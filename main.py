@@ -15,32 +15,64 @@ def make_dir(dir):
 ########### Config Loader ###########
 
 def get_loader(config):
-    transform = transforms.Compose([                                #unisce varie trasformazioni assieme
-            transforms.Pad(10),                                     #crea un paddig
-            transforms.CenterCrop((config.h_image_size, config.w_image_size)),      #fa crop al centro, ma di quanto??
-            transforms.ToTensor(),                                  #trasforma l'immagine in tensor ( con C x H x W, cioe Channels, Height and Width)
-            transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))  #normalizza il tensor nella media e deviazione standard
-    ])
+        transform = transforms.Compose([                                #unisce varie trasformazioni assieme
+                transforms.Pad(10),                                     #crea un paddig
+                transforms.CenterCrop((config.h_image_size, config.w_image_size)),      #fa crop al centro, ma di quanto??
+                transforms.ToTensor(),                                  #trasforma l'immagine in tensor ( con C x H x W, cioe Channels, Height and Width)
+                transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))  #normalizza il tensor nella media e deviazione standard
+        ])
 
-    train_data_set = VOC(root=config.path,                          #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
-                         image_size=(config.h_image_size, config.w_image_size),  #h_image_size e w_image_size  sono 256 come argomento
-                         dataset_type='train',
-                         transform=transform)
-    train_data_loader = DataLoader(train_data_set,                  #crea un dataset con un batch size
-                                   batch_size=config.train_batch_size,  # 16 come argomento
-                                   shuffle=True,
-                                   drop_last=True,
-                                   num_workers=config.num_workers, pin_memory=True)            #true vuol dire che per ogni epoca, il dataset viene mescolato
+        train_data_set = VOC(root=config.path,                          #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
+                                image_size=(config.h_image_size, config.w_image_size),  #h_image_size e w_image_size  sono 256 come argomento
+                                dataset_type='train',
+                                transform=transform)
 
-    val_data_set = VOC(root=config.path,                            #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
-                        image_size=(config.h_image_size, config.w_image_size),#h_image_size e w_image_size  sono 256 come argomento
-                        dataset_type='val',
-                        transform=transform)
-    val_data_loader = DataLoader(train_data_set,                    #crea un dataset con un batch size
-                        batch_size=config.val_batch_size,  #16 come argomento
-                        shuffle=False,
-                        num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
-    return train_data_loader, val_data_loader                           #ritorna i due vettori
+        for i, ciao in enumerate(train_data_set.__len__):
+                print(train_data_set.__getitem__(2))                           
+                print(ciao)
+                
+        train_data_loader_1 = DataLoader(train_data_set,                  #crea un dataset con un batch size
+                                        batch_size=config.train_batch_size,  # 16 come argomento
+                                        shuffle=True,
+                                        drop_last=True,
+                                        num_workers=config.num_workers, pin_memory=True) 
+                                        
+        # train_data_loader_2 = DataLoader(train_data_set,                  #crea un dataset con un batch size
+        #                                 batch_size=config.train_batch_size,  # 16 come argomento
+        #                                 shuffle=True,
+        #                                 drop_last=True,
+        #                                 num_workers=config.num_workers, pin_memory=True)   
+
+        # train_data_loader_3 = DataLoader(train_data_set,                  #crea un dataset con un batch size
+        #                                 batch_size=config.train_batch_size,  # 16 come argomento
+        #                                 shuffle=True,
+        #                                 drop_last=True,
+        #                                 num_workers=config.num_workers, pin_memory=True)   
+
+ 
+                                      
+        
+        val_data_set = VOC(root=config.path,                            #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
+                                image_size=(config.h_image_size, config.w_image_size),#h_image_size e w_image_size  sono 256 come argomento
+                                dataset_type='val',
+                                transform=transform)
+
+        val_data_loader_1 = DataLoader(train_data_set,                    #crea un dataset con un batch size
+                                batch_size=config.val_batch_size,  #16 come argomento
+                                shuffle=False,
+                                num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
+        # val_data_loader_2 = DataLoader(train_data_set,                    #crea un dataset con un batch size
+        #                         batch_size=config.val_batch_size,  #16 come argomento
+        #                         shuffle=False,
+        #                         num_workers=config.num_workers, pin_memory=True)
+        
+        # val_data_loader_3 = DataLoader(train_data_set,                    #crea un dataset con un batch size
+        #                         batch_size=config.val_batch_size,  #16 come argomento
+        #                         shuffle=False,
+        #                         num_workers=config.num_workers, pin_memory=True)
+
+
+        return train_data_loader_1, val_data_loader_1#,train_data_loader_2, val_data_loader_2, train_data_loader_3, val_data_loader_3                       #ritorna i due vettori
 
 
 def main(config):                                                       #il config sarebbe il parser con tanti argomenti dei comandi
@@ -51,12 +83,23 @@ def main(config):                                                       #il conf
     for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
         make_dir(os.path.join(config.sample_save_path, folder))         #crea le cartelle in questione
     if config.mode == 'train':
-        train_data_loader, val_data_loader = get_loader(config)         #associa ai due dataset i valori. presi dal config
-        trainer = Trainer(train_data_loader=train_data_loader,          #fa partire il training, passando i due dataset
-                         val_data_loader=val_data_loader,
+        #train_data_loader_1, val_data_loader_1,train_data_loader_2, val_data_loader_2, train_data_loader_3, val_data_loader_3 = get_loader(config)         #associa ai due dataset i valori. presi dal config
+        train_data_loader_1, val_data_loader_1= get_loader(config)         #associa ai due dataset i valori. presi dal config
+        trainer_1 = Trainer(train_data_loader=train_data_loader_1,          #fa partire il training, passando i due dataset
+                         val_data_loader=val_data_loader_1,
                          config=config)
-        trainer.train_val()                                             #ora che la classe e' stata istanziata, fa partire il training
 
+
+        # trainer_2 = Trainer(train_data_loader=train_data_loader_2,          #fa partire il training, passando i due dataset
+        #                  val_data_loader=val_data_loader_2,
+        #                  config=config)
+        # trainer_3 = Trainer(train_data_loader=train_data_loader_3,          #fa partire il training, passando i due dataset
+        #                  val_data_loader=val_data_loader_3,
+        #                  config=config)                  
+        
+        trainer_1.train_val()                                             #ora che la classe e' stata istanziata, fa partire il training
+        #trainer_2.train_val()
+        #trainer_3.train_val()
 
 ########### Config Parameters ###########
 

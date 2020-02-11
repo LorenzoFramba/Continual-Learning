@@ -156,8 +156,9 @@ class Trainer:
             print_number = 0
             
             ########### Iterate over data ###########
-            for I, data in enumerate(iter(self.train_data_loader)):   
-                input_images, target_masks = data
+            for I, (input_images, target_masks) in enumerate(iter(self.train_data_loader)):   
+                
+                
                 start_mini_batch = time.time()
                 inputs = input_images.to(self.device)                               #transfer in GPU
                 labels = target_masks.to(self.device)                               #transfer in GPU  
