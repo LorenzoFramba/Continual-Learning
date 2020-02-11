@@ -47,20 +47,13 @@ def get_loader(config):
         train_data_3 = []
 
 
-
-
-
-
-        #i1, l1 = next(iter(trainloader))
-
-
         for i in range(train_data_loader_1.__len__()):
                 image, mask = train_data_set.__getitem__(i)   
                 out = mask.numpy().flatten()   
                 b = np.bincount(out).argmax() 
               
                 for h in range(len(image.numpy())):
-                        if (b<12):
+                        if (b<11):
                                 print("primo",b)
                                 train_data_1.append([image.numpy()[h], mask.numpy()[h]])
                                 
@@ -70,7 +63,7 @@ def get_loader(config):
                                         drop_last=True,
                                         num_workers=config.num_workers, pin_memory=True)
                                
-                        elif(b<17):
+                        elif(b<16):
                                 print("secondo",b)
                                 train_data_2.append([image.numpy()[h], mask.numpy()[h]])
                                 #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
@@ -98,7 +91,7 @@ def get_loader(config):
                                 dataset_type='val',
                                 transform=transform)
 
-        val_data_loader_1 = DataLoader(train_data_set,                    #crea un dataset con un batch size
+        val_data_loader_1 = DataLoader(val_data_set,                    #crea un dataset con un batch size
                                 batch_size=config.val_batch_size,  #16 come argomento
                                 shuffle=False,
                                 num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
