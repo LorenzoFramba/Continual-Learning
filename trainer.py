@@ -132,22 +132,27 @@ class Trainer:
     def unisci_tensori(self,train_data_1_imag,train_data_1_mask):
         
         mascheraModificata = Variable(torch.randn(self.cfg.train_batch_size, self.cfg.h_image_size, self.cfg.w_image_size))  
+        
+        list_data_1 = []
+        list_data_2 = []
+        
         train_data_1 = []
         train_data_2 = []
         cont =0
         while( cont < len(train_data_1_imag) ):
             
-            tensor_mask_1 = torch.stack(train_data_1_mask[cont])
-            tensor_imag_1 = torch.stack(train_data_1_imag[cont])  
+            train_data_1.append(train_data_1_mask[cont])
+            list_data_2.append(train_data_1_imag[cont])
+
+            if (cont%15==0 or cont ==(len(train_data_1_imag)-1)):
+                list_data_1 = torch.stack(train_data_1)
+                list_data_2= torch.stack(list_data_2)
+
+                train_data_2.append([train_data_1,list_data_2])
+                train_data_1.clear()
+                list_data_2.clear() 
             cont=cont+1 
-        
-        train_data_1.append([tensor_imag_1,tensor_mask_1])
-        cont = 0
-        
-        while( cont < len(train_data_1_imag) ):
-            cont=cont+1 
-            if (cont%16==0 or cont ==(len(train_data_1_imag)-1) ):
-                train_data_2.append(train_data_1[cont])
+
         
         return train_data_2
 
@@ -223,12 +228,10 @@ class Trainer:
                             train_data_3_mask.append([mascheraModificata[I]])
                             train_data_3_imag.append([image[I]])
             
-            
-            for I in range(self.cfg.train_batch_size):
-                tensor_mask_1 = torch.stack(train_data_1_mask[I])
-                tensor_imag_1 = torch.stack(train_data_1_imag[I])
-                tensor_mask_1.shape
-                tensor_imag_1.shape
+            train_data_1 = self.unisci_tensori(train_data_1_imag,train_data_1_mask)
+            train_data_2 = self.unisci_tensori(train_data_2_imag,train_data_2_mask)
+            train_data_3 = self.unisci_tensori(train_data_3_imag,train_data_3_mask)
+
                 
             
 
@@ -237,8 +240,8 @@ class Trainer:
             
             
             print(len(train_data_1))
-            #print(len(train_data_2))
-            #print(len(train_data_3))
+            print(len(train_data_2))
+            print(len(train_data_3))
 
 
             ########### Iterate over data ###########
