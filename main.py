@@ -56,35 +56,32 @@ def get_loader(config):
                         if (b<11):
                                 print("primo",b)
                                 train_data_1.append([image.numpy()[h], mask.numpy()[h]])
-                                
                                 #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
-                                trainloader_1 = DataLoader(train_data_1, batch_size=config.train_batch_size,  # 16 come argomento
-                                        shuffle=True,
-                                        drop_last=True,
-                                        num_workers=config.num_workers, pin_memory=True)
-                               
                         elif(b<16):
                                 print("secondo",b)
                                 train_data_2.append([image.numpy()[h], mask.numpy()[h]])
                                 #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
-                                trainloader_2 = DataLoader(train_data_2, batch_size=config.train_batch_size,  # 16 come argomento
-                                        shuffle=True,
-                                        drop_last=True,
-                                        num_workers=config.num_workers, pin_memory=True)
-                                
                         else:
                                 print("terzo",b)
-                                
                                 train_data_3.append([image.numpy()[h], mask.numpy()[h]])
-                                
                                 #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
-                                trainloader_3 = DataLoader(train_data_3, batch_size=config.train_batch_size,  # 16 come argomento
+
+
+                trainloader_1 = DataLoader(train_data_1, batch_size=config.train_batch_size, 
                                         shuffle=True,
                                         drop_last=True,
-                                        num_workers=config.num_workers, pin_memory=True)
-                                
- 
-                                      
+                                        num_workers=config.num_workers, pin_memory=True)  
+
+                trainloader_2 = DataLoader(train_data_2, batch_size=config.train_batch_size, 
+                        shuffle=True,
+                        drop_last=True,
+                        num_workers=config.num_workers, pin_memory=True) 
+
+                trainloader_3 = DataLoader(train_data_3, batch_size=config.train_batch_size, 
+                        shuffle=True,
+                        drop_last=True,
+                        num_workers=config.num_workers, pin_memory=True)    
+
         
         val_data_set = VOC(root=config.path,                            #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
                                 image_size=(config.h_image_size, config.w_image_size),#h_image_size e w_image_size  sono 256 come argomento
