@@ -129,6 +129,29 @@ class Trainer:
                     if torch.is_tensor(v):
                         state[k] = v.cuda()
 
+    def unisci_tensori(self,train_data_1_imag,train_data_1_mask):
+        
+        mascheraModificata = Variable(torch.randn(self.cfg.train_batch_size, self.cfg.h_image_size, self.cfg.w_image_size))  
+        train_data_1 = []
+        train_data_2 = []
+        cont =0
+        while( cont < len(train_data_1_imag) ):
+            
+            tensor_mask_1 = torch.stack(train_data_1_mask[cont])
+            tensor_imag_1 = torch.stack(train_data_1_imag[cont])  
+            cont=cont+1 
+        
+        train_data_1.append([tensor_imag_1,tensor_mask_1])
+        cont = 0
+        
+        while( cont < len(train_data_1_imag) ):
+            cont=cont+1 
+            if (cont%16==0 or cont ==(len(train_data_1_imag)-1) ):
+                train_data_2.append(train_data_1[cont])
+        
+        return train_data_2
+
+
     ########### trainer phase ###########
     def train_val(self):
         since = time.time()
@@ -155,53 +178,90 @@ class Trainer:
             start_epoch = time.time()
             print_number = 0
 
-            print(self.train_data_loader.__len__())
+
 
             train_data_1 = []
             train_data_2 = []
             train_data_3 = []
-            
-            mascheraModificata = torch.zeros([self.cfg.h_image_size , self.cfg.w_image_size])
 
-            for i in range(self.train_data_loader.__len__()):
-                    image, mask = self.train_data_loader.dataset.__getitem__(i)  
-                    out = mask.numpy().flatten()   # la matrice diventa un vettore
-                    try:
-                            #if(np.amax(np.bincount(out[out != 0])) != (config.h_image_size * config.w_image_size)): #se 0 e' non e' l'unico il valore  
-                            b = np.argmax(np.bincount(out[out != (0 or 21)]))   # ritorno il valore B maggior presente del vettore, diverso da 0                               
-                            mascheraModificata = np.where(out!=(b and 0), 21, out).reshape((self.cfg.h_image_size, self.cfg.w_image_size)) #sostituisco tutti gli altri valori diversi da B o background, con un valore nullo                        mascheraModificata = torch.from_numpy(newReplaced)
+            train_data_1_mask = []
+            train_data_2_mask = []
+            train_data_3_mask = []
+
+
+            train_data_1_imag = []
+            train_data_2_imag = []
+            train_data_3_imag = []
+
+
+
+
+            
+            mascheraModificata = Variable(torch.randn(self.cfg.train_batch_size, self.cfg.h_image_size, self.cfg.w_image_size))  #inizializzo un tensore che mi servira' per copiare un altro tensore mask, senza le classi diverse da quella piu' presente
+            print(mascheraModificata.size())
+            for i, (image, mask) in enumerate(iter(self.train_data_loader)):
+                    
+                    #mask:   numero di immagini + altezza + larghezza
+                    #image:   numero di immagini + numero di channels + altezza + larghezza
+
+                for I in range(self.cfg.train_batch_size):
+                    out = mask[I].numpy().flatten()   # la matrice diventa un vettore
+                    try:    
+                            b = np.argmax(np.bincount(out[out != (0 or 21)]))   # ritorno il valore B maggior presente del vettore, diverso dallo sfondo (0) o void (21)                                                             print("i:",i," ,I: ", I," B:" ,b)
+                            mascheraModificata[I] = torch.from_numpy(np.where(out!=(b and 0), 21, out).reshape( self.cfg.h_image_size, self.cfg.w_image_size)) #sostituisco tutti gli altri valori diversi da B o background, con un valore nullo                        mascheraModificata = torch.from_numpy(newReplaced)
                             print(i, " fatto")
                     except:
-                            mascheraModificata = mask 
+                            mascheraModificata[I] = mask[I] 
                             print(i, " An exception occurred")
-
                     if (b<12):
-                            train_data_1.append([image, mascheraModificata])
-                                    
+                            train_data_1_mask.append([mascheraModificata[I]])
+                            train_data_1_imag.append([image[I]])
                     elif(b<17):
-                            train_data_2.append([image, mascheraModificata])
-                                    
+                            train_data_2_mask.append([mascheraModificata[I]])   
+                            train_data_2_imag.append([image[I]])
                     else:
-                            train_data_3.append([image, mascheraModificata])
+                            train_data_3_mask.append([mascheraModificata[I]])
+                            train_data_3_imag.append([image[I]])
+            
+            
+            for I in range(self.cfg.train_batch_size):
+                tensor_mask_1 = torch.stack(train_data_1_mask[I])
+                tensor_imag_1 = torch.stack(train_data_1_imag[I])
+                tensor_mask_1.shape
+                tensor_imag_1.shape
+                
+            
 
+
+            
+            
+            
             print(len(train_data_1))
-            print(len(train_data_2))
-            print(len(train_data_3))
+            #print(len(train_data_2))
+            #print(len(train_data_3))
 
 
             ########### Iterate over data ###########
             #for I, (input_images, target_masks) in enumerate(iter(self.train_data_loader)):   
-            for I, f in enumerate(train_data_1):    
-                
-                print(f[0].size())
-                print(type(f[1]))
+            #for I, (A, input_images, target_masks) in enumerate(train_data_1):    
+            
+            for I in range(len(train_data_1)):    
+            
+                input_images = train_data_1[I][0]
+                target_masks = train_data_1[I][1]
+
+                print("input",input_images.size())
+                print(type(input_images))
+                print(type(target_masks))
+                print("target",target_masks.size())
+
                 start_mini_batch = time.time()
 
                 #inputs = input_images.to(self.device)                               #transfer in GPU
                 #labels = target_masks.to(self.device)                               #transfer in GPU  
 
-                inputs = f[0].to(self.device) 
-                labels = torch.from_numpy(f[1]).to(self.device)
+                inputs = input_images.to(self.device) 
+                labels = target_masks.to(self.device)
 
 
                 outputs = self.model(inputs)     
