@@ -131,30 +131,96 @@ class Trainer:
 
     def unisci_tensori(self,train_data_1_imag,train_data_1_mask):
         
-        mascheraModificata = Variable(torch.randn(self.cfg.train_batch_size, self.cfg.h_image_size, self.cfg.w_image_size))  
         
         list_data_1 = []
         list_data_2 = []
+        list_data_3 = []
         
         train_data_1 = []
         train_data_2 = []
         cont =0
+        print(len(train_data_1_imag))
         while( cont < len(train_data_1_imag) ):
             
-            train_data_1.append(train_data_1_mask[cont])
+            list_data_1.append(train_data_1_mask[cont])
             list_data_2.append(train_data_1_imag[cont])
 
-            if (cont%15==0 or cont ==(len(train_data_1_imag)-1)):
-                list_data_1 = torch.stack(train_data_1)
-                list_data_2= torch.stack(list_data_2)
+            if ((cont%15==0 and cont != 0) or cont == (len(train_data_1_imag)-1) ):
+                
+                ####  questo pezzo di codice e' un abominio. purtroppo pytorch non permette di usare stack su cicli per concatenare tensori :(   che vergogna) ####
+                if(len(list_data_1)==1):
+                    train_data_1 = torch.stack([list_data_1[0][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0]])
+                elif(len(list_data_1)==2):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0]])
+                elif(len(list_data_1)==3):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0]])
+                elif(len(list_data_1)==4):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0]])
 
-                train_data_2.append([train_data_1,list_data_2])
-                train_data_1.clear()
+                elif(len(list_data_1)==5):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0]])
+
+                elif(len(list_data_1)==6):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0]])
+
+                elif(len(list_data_1)==7):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0]])
+
+                elif(len(list_data_1)==8):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0]])
+
+                elif(len(list_data_1)==9):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0]])
+
+                elif(len(list_data_1)==10):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0]])
+
+                elif(len(list_data_1)==11):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0]])
+
+                elif(len(list_data_1)==12):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0],list_data_1[11][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0],list_data_2[11][0]])
+
+                elif(len(list_data_1)==13):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0],list_data_1[11][0],list_data_1[12][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0],list_data_2[11][0],list_data_2[12][0]])
+
+                elif(len(list_data_1)==14):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0],list_data_1[11][0],list_data_1[12][0],list_data_1[13][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0],list_data_2[11][0],list_data_2[12][0],list_data_2[13][0]])
+
+                elif(len(list_data_1)==15):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0],list_data_1[11][0],list_data_1[12][0],list_data_1[13][0],list_data_1[14][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0],list_data_2[11][0],list_data_2[12][0],list_data_2[13][0],list_data_2[14][0]])
+
+                elif(len(list_data_1)==16):
+                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0],list_data_1[11][0],list_data_1[12][0],list_data_1[13][0],list_data_1[14][0],list_data_1[15][0]])
+                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0],list_data_2[11][0],list_data_2[12][0],list_data_2[13][0],list_data_2[14][0],list_data_2[15][0]])
+
+
+                   
+                
+                
+                
+                list_data_3.append([train_data_2,train_data_1])
+                list_data_1.clear()
                 list_data_2.clear() 
-            cont=cont+1 
 
+            cont = cont+1 
         
-        return train_data_2
+        return list_data_3
 
 
     ########### trainer phase ###########
@@ -198,10 +264,6 @@ class Trainer:
             train_data_2_imag = []
             train_data_3_imag = []
 
-
-
-
-            
             mascheraModificata = Variable(torch.randn(self.cfg.train_batch_size, self.cfg.h_image_size, self.cfg.w_image_size))  #inizializzo un tensore che mi servira' per copiare un altro tensore mask, senza le classi diverse da quella piu' presente
             print(mascheraModificata.size())
             for i, (image, mask) in enumerate(iter(self.train_data_loader)):
@@ -228,14 +290,10 @@ class Trainer:
                             train_data_3_mask.append([mascheraModificata[I]])
                             train_data_3_imag.append([image[I]])
             
+
             train_data_1 = self.unisci_tensori(train_data_1_imag,train_data_1_mask)
             train_data_2 = self.unisci_tensori(train_data_2_imag,train_data_2_mask)
             train_data_3 = self.unisci_tensori(train_data_3_imag,train_data_3_mask)
-
-                
-            
-
-
             
             
             
@@ -246,12 +304,12 @@ class Trainer:
 
             ########### Iterate over data ###########
             #for I, (input_images, target_masks) in enumerate(iter(self.train_data_loader)):   
-            #for I, (A, input_images, target_masks) in enumerate(train_data_1):    
+            for I, (input_images, target_masks) in enumerate(train_data_1):    
             
-            for I in range(len(train_data_1)):    
+                #for I in range(len(train_data_1)):    
             
-                input_images = train_data_1[I][0]
-                target_masks = train_data_1[I][1]
+                #input_images = train_data_1[I][0]
+                #target_masks = train_data_1[I][1]
 
                 print("input",input_images.size())
                 print(type(input_images))
@@ -259,13 +317,11 @@ class Trainer:
                 print("target",target_masks.size())
 
                 start_mini_batch = time.time()
+ 
 
-                #inputs = input_images.to(self.device)                               #transfer in GPU
-                #labels = target_masks.to(self.device)                               #transfer in GPU  
-
-                inputs = input_images.to(self.device) 
-                labels = target_masks.to(self.device)
-
+                inputs = input_images.to(self.device)
+                labels = target_masks.to(self.device, dtype=torch.int64) 
+                
 
                 outputs = self.model(inputs)     
                 self.reset_grad()                                                   #resettiamo i  gradienti
