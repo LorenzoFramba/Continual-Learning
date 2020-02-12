@@ -45,39 +45,64 @@ def get_loader(config):
         train_data_1 = []
         train_data_2 = []
         train_data_3 = []
-
+        
+        mascheraModificata = torch.zeros([config.h_image_size , config.w_image_size])
 
         for i in range(train_data_loader_1.__len__()):
-                image, mask = train_data_set.__getitem__(i)   
-                out = mask.numpy().flatten()   
-                b = np.bincount(out).argmax() 
-              
-                for h in range(len(image.numpy())):
-                        if (b<11):
-                                print("primo",b)
-                                train_data_1.append([image.numpy()[h], mask.numpy()[h]])
-                                #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
-                        elif(b<16):
-                                print("secondo",b)
-                                train_data_2.append([image.numpy()[h], mask.numpy()[h]])
-                                #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
-                        else:
-                                print("terzo",b)
-                                train_data_3.append([image.numpy()[h], mask.numpy()[h]])
-                                #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
+                image, mask = train_data_set.__getitem__(i)  
+                out = mask.numpy().flatten()   # la matrice diventa un vettore
+                try:
+                        #if(np.amax(np.bincount(out[out != 0])) != (config.h_image_size * config.w_image_size)): #se 0 e' non e' l'unico il valore  
+                        b = np.argmax(np.bincount(out[out != 0]))   # ritorno il valore B maggior presente del vettore, diverso da 0                               
+                        newReplaced = np.where(out!=(b and 0), 21, out).reshape((config.h_image_size, config.w_image_size)) #sostituisco tutti gli altri valori diversi da B o background, con un valore nullo                        mascheraModificata = torch.from_numpy(newReplaced)
+                except:
+                        print("An exception occurred")
+                        mascheraModificata = mask
+                
+
+                #else:
+                #        
+                
 
 
-                trainloader_1 = DataLoader(train_data_1, batch_size=config.train_batch_size, 
+                # for h in range(len(image.numpy())):
+                #         if (b<11):
+                #                 print("primo",b)
+                #                 train_data_1.append([image.numpy()[h], mascheraModificata[h]])
+                #                 #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
+                #         elif(b<16):
+                #                 print("secondo",b)
+                #                 train_data_2.append([image.numpy()[h], mascheraModificata[h]])
+                #                 #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
+                #         else:
+                #                 print("terzo",b)
+                #                 train_data_3.append([image.numpy()[h], mascheraModificata[h]])
+                #                 #dataset = TensorDataset(Tensor(image.numpy()[h]), Tensor(mask.numpy()[h]))
+                if (b<12):
+                        train_data_1.append([image, mascheraModificata])
+                                
+                elif(b<17):
+                        train_data_2.append([image, mascheraModificata])
+                                
+                else:
+                        train_data_3.append([image, mascheraModificata])
+
+
+                print(len(train_data_1))
+                print(len(train_data_2))
+                print(len(train_data_3))
+        
+        trainloader_1 = DataLoader(train_data_1, batch_size=config.train_batch_size, 
                                         shuffle=True,
                                         drop_last=True,
                                         num_workers=config.num_workers, pin_memory=True)  
 
-                trainloader_2 = DataLoader(train_data_2, batch_size=config.train_batch_size, 
+        trainloader_2 = DataLoader(train_data_2, batch_size=config.train_batch_size, 
                         shuffle=True,
                         drop_last=True,
                         num_workers=config.num_workers, pin_memory=True) 
 
-                trainloader_3 = DataLoader(train_data_3, batch_size=config.train_batch_size, 
+        trainloader_3 = DataLoader(train_data_3, batch_size=config.train_batch_size, 
                         shuffle=True,
                         drop_last=True,
                         num_workers=config.num_workers, pin_memory=True)    
