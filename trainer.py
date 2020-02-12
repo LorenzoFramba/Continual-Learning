@@ -160,39 +160,74 @@ class Trainer:
             train_data_3 = []
  
 
-            for i in range(self.train_data_loader.__len__()):
-                image, mask = self.train_data_loader.dataset.__getitem__(i)   
-                out = mask.numpy().flatten()   
-                b = np.bincount(out).argmax() 
+            # for i in range(self.train_data_loader.__len__()):
+            #     image, mask = self.train_data_loader.dataset.__getitem__(i)   
+            #     out = mask.numpy().flatten()   
+            #     b = np.bincount(out).argmax() 
               
-                for h in range(len(image.numpy())):
-                        if (b<11):
-                                print("primo",b)
-                                train_data_1.append([image.numpy()[h], mask.numpy()[h]])
-                        elif(b<16):
-                                print("secondo",b)
-                                train_data_2.append([image.numpy()[h], mask.numpy()[h]])
-                        else:
-                                print("terzo",b)
-                                train_data_3.append([image.numpy()[h], mask.numpy()[h]])
-            for f in train_data_1:
-                print(f[0],f[1])
+            #     for h in range(len(image.numpy())):
+            #             if (b<11):
+            #                     print("primo",b)
+            #                     train_data_1.append([image.numpy()[h], mask.numpy()[h]])
+            #             elif(b<16):
+            #                     print("secondo",b)
+            #                     train_data_2.append([image.numpy()[h], mask.numpy()[h]])
+            #             else:
+            #                     print("terzo",b)
+            #                     train_data_3.append([image.numpy()[h], mask.numpy()[h]])
+            # for f in train_data_1:
+            #     print(f[0],f[1])
+
+            print(self.train_data_loader.__len__())
 
 
+            train_data_1 = []
+            train_data_2 = []
+            train_data_3 = []
+            
+            mascheraModificata = torch.zeros([self.cfg.h_image_size , self.cfg.w_image_size])
+
+            for i in range(self.train_data_loader.__len__()):
+                    image, mask = self.train_data_loader.dataset.__getitem__(i)  
+                    out = mask.numpy().flatten()   # la matrice diventa un vettore
+                    try:
+                            #if(np.amax(np.bincount(out[out != 0])) != (config.h_image_size * config.w_image_size)): #se 0 e' non e' l'unico il valore  
+                            b = np.argmax(np.bincount(out[out != (0 or 21)]))   # ritorno il valore B maggior presente del vettore, diverso da 0                               
+                            mascheraModificata = np.where(out!=(b and 0), 21, out).reshape((self.cfg.h_image_size, self.cfg.w_image_size)) #sostituisco tutti gli altri valori diversi da B o background, con un valore nullo                        mascheraModificata = torch.from_numpy(newReplaced)
+                            print(i, " fatto")
+                    except:
+                            mascheraModificata = mask 
+                            print(i, " An exception occurred")
+                            
+                    if (b<12):
+                            train_data_1.append([image, mascheraModificata])
+                                    
+                    elif(b<17):
+                            train_data_2.append([image, mascheraModificata])
+                                    
+                    else:
+                            train_data_3.append([image, mascheraModificata])
+
+
+            print(len(train_data_1))
+            print(len(train_data_2))
+            print(len(train_data_3))
 
 
             ########### Iterate over data ###########
             #for I, (input_images, target_masks) in enumerate(iter(self.train_data_loader)):   
-            for f in train_data_1:    
+            for I, f in enumerate(train_data_1):    
                 
                 start_mini_batch = time.time()
+
                 #inputs = input_images.to(self.device)                               #transfer in GPU
                 #labels = target_masks.to(self.device)                               #transfer in GPU  
-                
-                inputs = torch.from_numpy(f[0]).float().to(self.device) 
-                labels = torch.from_numpy(f[1]).float().to(self.device)
-                
-                outputs = self.model(inputs)        
+
+                inputs = f[0].to(self.device) 
+                labels = torch.from_numpy(f[1]).to(self.device)
+
+
+                outputs = self.model(inputs)     
                 self.reset_grad()                                                   #resettiamo i  gradienti
                 loss = self.c_loss(outputs, labels)                                 #cross entropy tra l'output e quello che avremmo dovuto ottenere
                 loss.backward()                                                     #fa il gradiente
