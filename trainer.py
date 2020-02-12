@@ -154,32 +154,8 @@ class Trainer:
             pixel_accuracy_epoch=0.0
             start_epoch = time.time()
             print_number = 0
-            
-            train_data_1 = []
-            train_data_2 = []
-            train_data_3 = []
- 
-
-            # for i in range(self.train_data_loader.__len__()):
-            #     image, mask = self.train_data_loader.dataset.__getitem__(i)   
-            #     out = mask.numpy().flatten()   
-            #     b = np.bincount(out).argmax() 
-              
-            #     for h in range(len(image.numpy())):
-            #             if (b<11):
-            #                     print("primo",b)
-            #                     train_data_1.append([image.numpy()[h], mask.numpy()[h]])
-            #             elif(b<16):
-            #                     print("secondo",b)
-            #                     train_data_2.append([image.numpy()[h], mask.numpy()[h]])
-            #             else:
-            #                     print("terzo",b)
-            #                     train_data_3.append([image.numpy()[h], mask.numpy()[h]])
-            # for f in train_data_1:
-            #     print(f[0],f[1])
 
             print(self.train_data_loader.__len__())
-
 
             train_data_1 = []
             train_data_2 = []
@@ -198,7 +174,7 @@ class Trainer:
                     except:
                             mascheraModificata = mask 
                             print(i, " An exception occurred")
-                            
+
                     if (b<12):
                             train_data_1.append([image, mascheraModificata])
                                     
@@ -207,7 +183,6 @@ class Trainer:
                                     
                     else:
                             train_data_3.append([image, mascheraModificata])
-
 
             print(len(train_data_1))
             print(len(train_data_2))
@@ -218,6 +193,8 @@ class Trainer:
             #for I, (input_images, target_masks) in enumerate(iter(self.train_data_loader)):   
             for I, f in enumerate(train_data_1):    
                 
+                print(f[0].size())
+                print(type(f[1]))
                 start_mini_batch = time.time()
 
                 #inputs = input_images.to(self.device)                               #transfer in GPU
