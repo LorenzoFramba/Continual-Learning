@@ -218,8 +218,150 @@ class Trainer:
         return list_data_3
 
 
+
+    def separa(self):
+            train_mezzi_data = []
+            train_casa_data = []
+            train_animali_data = []
+           
+            train_custom_data = []
+            train_con_cose_data = []
+
+
+            train_mezzi_mask = []
+            train_casa_mask = []
+            train_animali_mask = []
+            train_custom_mask = []
+
+            train_mezzi_imag = []
+            train_casa_imag = []
+            train_animali_imag = []
+            train_custom_imag = []
+            root = self.cfg.path
+            train_items = []            #vettore per train
+            val_items = []              #vettore per validation
+
+            img_path = os.path.join(root, 'VOC2012', 'JPEGImages')
+            mask_path = os.path.join(root, 'VOC2012', 'SegmentationClass')
+            train_data_list = [l.strip('\n') for l in open(os.path.join(root, 'VOC2012',
+                            'ImageSets', 'Segmentation', 'train.txt')).readlines()]
+
+            a = 0
+            for i, (image, mask) in enumerate(iter(self.train_data_loader)):
+                
+                mascheraModificata=mask 
+                print("numero", i)
+                print(mascheraModificata.size()) 
+
+                    
+                    #mezzi:  1 2 4 6 7 14 19
+                    #animali: 3 8 10 12 13 15 17
+                    #casa:  5 9 11 16 18 20
+
+                
+
+                for I in range(self.cfg.train_batch_size):
+
+                        nomeFoto = train_data_list[a]
+                        item = (os.path.join(img_path, nomeFoto + '.jpg'), os.path.join(mask_path, nomeFoto + '.png'))
+
+                        a+=1
+                        print("ITERAZIONE: ", I, " su ",self.cfg.train_batch_size )
+                        out = mask[I].numpy().flatten()   
+                        lista = np.unique(out)
+
+                        mezzi_   = [0,21, 1, 2, 4, 6, 7, 14, 19]
+                        animali_ = [0,21, 3 ,8 ,10 ,12 ,13 ,15, 17]
+                        casa_    = [0,21, 5 ,9 ,11, 16, 18, 20]
+                        mezzi   =  all(elem in mezzi_  for elem in lista)
+                        animali =  all(elem in animali_  for elem in lista)
+                        casa    =  all(elem in casa_  for elem in lista)
+                        
+                        if(mezzi):
+                            print(" ERA UN MEZZO ")
+                            train_mezzi_data.append(item)
+                            tv.utils.save_image(image,os.path.join(self.cfg.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                        
+                        elif(animali):
+                            print(" ERA UN ANIMALE ")
+                            train_animali_data.append(item)
+                            tv.utils.save_image(image,os.path.join(self.cfg.sorted_save_path,"animali",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                        elif(casa):
+                            print(" ERA IN CASA ")
+                            train_casa_data.append(item)
+                            tv.utils.save_image(image,os.path.join(self.cfg.sorted_save_path,"casa",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                        else:
+                            print("immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
+                            train_con_cose_data.append(lista)
+                            train_custom_data.append(item)
+                            print(" ed ha ste classi ",train_con_cose_data)
+                            train_con_cose_data.clear()
+                            #tv.utils.save_image(to_rgb(mask[I]),os.path.join(self.cfg.sorted_save_path,"random",f"predicted_{i}_{I}.jpg")) 
+                            tv.utils.save_image(image,os.path.join(self.cfg.sorted_save_path,"random",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+
+                        
+                        
+                        
+            print("MEZZI:" ,len(train_mezzi_data)) 
+            print("ANIMALI:", len(train_animali_data)) 
+            print("CASE:", len(train_casa_data)) 
+            print("A CASO:", len(train_custom_data)) 
+            print("PATHS in MEZZI ")
+            print(train_mezzi_data)
+            print("PATHS in ANIMALI")
+            print(train_animali_data)
+            print("PATHS in CASE")
+            print(train_casa_data)
+            print("PATHS RANDOM")
+            print(train_custom_data)
+
+                    
+                    # try:    
+                    #         b = np.argmax(np.bincount(out[out != (0 or 21)]))   # ritorno il valore B maggior presente del vettore, diverso dallo sfondo (0) o void (21)                                                             print("i:",i," ,I: ", I," B:" ,b)
+                    #         mascheraModificata[I] = torch.from_numpy(np.where(out!=(b and 0), 21, out).reshape( self.cfg.h_image_size, self.cfg.w_image_size)) #sostituisco tutti gli altri valori diversi da B o background, con un valore nullo                        mascheraModificata = torch.from_numpy(newReplaced)
+                    #         print(i, " fatto")
+                    # except:
+                    #         mascheraModificata[I] = mask[I] 
+                    #         print(i, " An exception occurred")
+                    # if (b<12):
+                    #         train_data_1_mask.append([mascheraModificata[I]])
+                    #         train_data_1_imag.append([image[I]])
+                    # elif(b<17):
+                    #         train_data_2_mask.append([mascheraModificata[I]])   
+                    #         train_data_2_imag.append([image[I]])
+                    # else:
+                    #         train_data_3_mask.append([mascheraModificata[I]])
+                    #         train_data_3_imag.append([image[I]])
+            
+
+            # train_data_1 = self.unisci_tensori(train_data_1_imag,train_data_1_mask)
+            # train_data_2 = self.unisci_tensori(train_data_2_imag,train_data_2_mask)
+            # train_data_3 = self.unisci_tensori(train_data_3_imag,train_data_3_mask)
+            
+            
+            
+            # print(len(train_data_1))
+            # print(len(train_data_2))
+            # print(len(train_data_3))
+
+
+            # ########### Iterate over data ###########
+            
+            # for I, (input_images, target_masks) in enumerate(train_data_1):    
+            
+
+            #     print("input",input_images.size())
+            #     print(type(input_images))
+            #     print(type(target_masks))
+            #     print("target",target_masks.size())
+
+
+
+        
     ########### trainer phase ###########
     def train_val(self):
+
+        self.separa()
         since = time.time()
         iters_per_epoch = len(self.train_data_loader.dataset) // self.cfg.train_batch_size
         epoch = self.start_epoch
@@ -244,68 +386,8 @@ class Trainer:
             start_epoch = time.time()
             print_number = 0
 
-            train_data_1 = []
-            train_data_2 = []
-            train_data_3 = []
 
-            train_data_1_mask = []
-            train_data_2_mask = []
-            train_data_3_mask = []
-
-
-            train_data_1_imag = []
-            train_data_2_imag = []
-            train_data_3_imag = []
-
-            #mascheraModificata = Variable(torch.randn(self.cfg.train_batch_size, self.cfg.h_image_size, self.cfg.w_image_size))  #inizializzo un tensore che mi servira' per copiare un altro tensore mask, senza le classi diverse da quella piu' presente
-            
-            for i, (image, mask) in enumerate(iter(self.train_data_loader)):
-                mascheraModificata=mask 
-                print(mascheraModificata.size())     
-                    #mask:   numero di immagini + altezza + larghezza
-                    #image:   numero di immagini + numero di channels + altezza + larghezza
-
-                for I in range(self.cfg.train_batch_size):
-                    print("ITERAZIONE: ", I, " su ",self.cfg.train_batch_size )
-                    out = mask[I].numpy().flatten()   # la matrice diventa un vettore
-                    try:    
-                            b = np.argmax(np.bincount(out[out != (0 or 21)]))   # ritorno il valore B maggior presente del vettore, diverso dallo sfondo (0) o void (21)                                                             print("i:",i," ,I: ", I," B:" ,b)
-                            mascheraModificata[I] = torch.from_numpy(np.where(out!=(b and 0), 21, out).reshape( self.cfg.h_image_size, self.cfg.w_image_size)) #sostituisco tutti gli altri valori diversi da B o background, con un valore nullo                        mascheraModificata = torch.from_numpy(newReplaced)
-                            print(i, " fatto")
-                    except:
-                            mascheraModificata[I] = mask[I] 
-                            print(i, " An exception occurred")
-                    if (b<12):
-                            train_data_1_mask.append([mascheraModificata[I]])
-                            train_data_1_imag.append([image[I]])
-                    elif(b<17):
-                            train_data_2_mask.append([mascheraModificata[I]])   
-                            train_data_2_imag.append([image[I]])
-                    else:
-                            train_data_3_mask.append([mascheraModificata[I]])
-                            train_data_3_imag.append([image[I]])
-            
-
-            train_data_1 = self.unisci_tensori(train_data_1_imag,train_data_1_mask)
-            train_data_2 = self.unisci_tensori(train_data_2_imag,train_data_2_mask)
-            train_data_3 = self.unisci_tensori(train_data_3_imag,train_data_3_mask)
-            
-            
-            
-            print(len(train_data_1))
-            print(len(train_data_2))
-            print(len(train_data_3))
-
-
-            ########### Iterate over data ###########
-            #for I, (input_images, target_masks) in enumerate(iter(self.train_data_loader)):   
-            for I, (input_images, target_masks) in enumerate(train_data_1):    
-            
-
-                print("input",input_images.size())
-                print(type(input_images))
-                print(type(target_masks))
-                print("target",target_masks.size())
+            for I, (input_images, target_masks) in enumerate(iter(self.train_data_loader)):   
 
                 start_mini_batch = time.time()
  

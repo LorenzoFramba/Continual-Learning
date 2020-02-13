@@ -35,7 +35,7 @@ def get_loader(config):
                 
         train_data_loader_1 = DataLoader(train_data_set,                  #crea un dataset con un batch size
                                         batch_size=config.train_batch_size,  # 16 come argomento
-                                        shuffle=True,
+                                        shuffle=False,    #METTILO true
                                         drop_last=True,
                                         num_workers=config.num_workers, pin_memory=True) 
         
@@ -58,8 +58,11 @@ def main(config):                                                       #il conf
     print(sys.version)
     make_dir(config.model_save_path)                                    #crea cartella del modello
     make_dir(config.sample_save_path)                                   #crea cartella del sample
+    make_dir(config.sorted_save_path)
     for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
         make_dir(os.path.join(config.sample_save_path, folder))         #crea le cartelle in questione
+    for folder in ["mezzi","animali","casa","random"]:                #tra i vari folders delle foto
+        make_dir(os.path.join(config.sorted_save_path, folder))    
     if config.mode == 'train':
         train_data_loader_1, val_data_loader_1= get_loader(config)         #associa ai due dataset i valori. presi dal config
         trainer_1 = Trainer(train_data_loader=train_data_loader_1,          #fa partire il training, passando i due dataset
@@ -96,6 +99,7 @@ if __name__ == '__main__':
     # Path
     parser.add_argument('--model_save_path', type=str, default='./model')
     parser.add_argument('--sample_save_path', type=str, default='./sample')
+    parser.add_argument('--sorted_save_path', type=str, default='./sorting')
     parser.add_argument('--path', type=str, default='./dataset')
 
     # Logging setting

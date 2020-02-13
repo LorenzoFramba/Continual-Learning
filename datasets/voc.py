@@ -6,28 +6,31 @@ from PIL import Image
 import numpy as np
 from torchvision import transforms
 
+#mezzi:  1 2 4 6 7 14 19
+#animali: 3 8 10 12 13 15 17
+#casa:  5 9 11 16 18 20
 # palette = {
-#     'background':[0, 0, 0],
-#     'aeroplane':[128, 0, 0],
+#0     'background':[0, 0, 0],           
+#     'aeroplane':[128, 0, 0],      
 #     'bicycle':[0, 128, 0],
 #     'bird':[128, 128, 0],
 #     'boat':[0, 0, 128],
-#     'bottle':[128, 0, 128],
+#5     'bottle':[128, 0, 128],
 #     'bus':[0, 128, 128],
 #     'car':[128, 128, 128],
-#     'cat':[64, 0, 0],
-#     'chair':[192, 0, 0],
-#     'cow':[64, 128, 0],
+#8     'cat':[64, 0, 0],
+#     'chair':[192, 0, 0],   *
+#10     'cow':[64, 128, 0],
 #     'diningtable':[192, 128, 0],
 #     'dog':[64, 0, 128],
 #     'horse':[192, 0, 128],
 #     'motorbike':[64, 128, 128],
-#     'person':[192, 128, 128],
-#     'pottedplant':[0, 64, 0],
+#15     'person':[192, 128, 128],
+#     'pottedplant':[0, 64, 0], *
 #     'sheep':[128, 64, 0],
-#     'sofa':[0, 192, 0],
+#     'sofa':[0, 192, 0],   *
 #     'train':[128, 192, 0],
-#     'tvmonitor':[0, 64, 128],
+#20     'tvmonitor':[0, 64, 128],
 #     'void':[224, 224, 192]}
 
 palette = [[0, 0, 0],
@@ -68,6 +71,7 @@ def to_mask(x):
             empty[i] = 0
         else:
             empty[i] = palette.index(list(it))
+
     mask = empty.reshape(H, W, 1).transpose(2, 0, 1)
     return torch.from_numpy(mask).squeeze().long()
 
@@ -101,11 +105,13 @@ def make_path(root):                #prende le imagini e le maschere e le unisce
 
     for it in train_data_list:
         item = (os.path.join(img_path, it + '.jpg'), os.path.join(mask_path, it + '.png'))
+        #print("item",item)
         train_items.append(item)          #aggiunge elemento in train
 
     for it in val_data_list:
         item = (os.path.join(img_path, it + '.jpg'), os.path.join(mask_path, it + '.png'))
         val_items.append(item)          #aggiunge elemento in validating
+
 
     return train_items, val_items       #ritorna i due vettori
 
