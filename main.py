@@ -49,6 +49,7 @@ def get_loader(config):
         val_data_loader_1 = DataLoader(val_data_set,                    #crea un dataset con un batch size
                                 batch_size=config.val_batch_size,  #16 come argomento
                                 shuffle=False,
+                                drop_last=True,
                                 num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
 
         
@@ -84,23 +85,18 @@ def separa(train_data_loader, val_data_loader):
                                                  'val.txt')).readlines()]
 
         a = 0
-        for i, (image, mask) in enumerate(iter(train_data_loader)):
-                
-                print("numero", i)
-  
+        for i, (image, mask) in enumerate(iter(train_data_loader)):                
+                print("TRAIN numero", i)
                     #mezzi:  1 2 4 6 7 14 19
                     #animali: 3 8 10 12 13 15 17
                     #casa:  5 9 11 16 18 20
-
-                
-
                 for I in range(config.train_batch_size):
 
                         nomeFoto = train_data_list[a]
                         item = (os.path.join(img_path, nomeFoto + '.jpg'), os.path.join(mask_path, nomeFoto + '.png'))
 
                         a+=1
-                        print("ITERAZIONE: ", I, " su ",config.train_batch_size )
+                        print("TRAIN ITERAZIONE: ", I, " su ",config.train_batch_size )
                         out = mask[I].numpy().flatten()   
                         lista = np.unique(out)
 
@@ -112,122 +108,117 @@ def separa(train_data_loader, val_data_loader):
                         casa    =  all(elem in casa_  for elem in lista)
                         
                         if(mezzi):
-                            print(" ERA UN MEZZO ")
+                            print("TRAIN  ERA UN MEZZO ")
                             train_mezzi_data.append(nomeFoto)
-                            tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
                         
                         elif(animali):
-                            print(" ERA UN ANIMALE ")
+                            print("TRAIN  ERA UN ANIMALE ")
                             train_animali_data.append(nomeFoto)
-                            tv.utils.save_image(image,os.path.join(config.sorted_save_path,"animali",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"animali",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
                         elif(casa):
-                            print(" ERA IN CASA ")
+                            print("TRAIN  ERA IN CASA ")
                             train_casa_data.append(nomeFoto)
-                            tv.utils.save_image(image,os.path.join(config.sorted_save_path,"casa",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"casa",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
                         else:
-                            print("immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
+                            print("TRAIN immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
                             train_con_cose_data.append(lista)
                             train_custom_data.append(nomeFoto)
                             print(" ed ha ste classi ",train_con_cose_data)
                             train_con_cose_data.clear()
-                            tv.utils.save_image(image,os.path.join(config.sorted_save_path,"random",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"random",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
                 
-                a = 0
-                for i, (image, mask) in enumerate(iter(train_data_loader)):
+        b = 0
+        
+        for i, (image, mask) in enumerate(iter(val_data_loader)):
                 
-                        print("numero", i)
-  
-                    #mezzi:  1 2 4 6 7 14 19
-                    #animali: 3 8 10 12 13 15 17
-                    #casa:  5 9 11 16 18 20
-
-                
-
+                  print("VAL numero", i)
                   for I in range(config.val_batch_size):
+                        if(b<1449):
+                                nomeFoto = val_data_list[b]
+                                print("numero b: ", b)
+                                item = (os.path.join(img_path, nomeFoto + '.jpg'), os.path.join(mask_path, nomeFoto + '.png'))
+                                
+                                b+=1
+                                print("VAL ITERAZIONE: ", I, " su ",config.val_batch_size )
+                                out = mask[I].numpy().flatten()   
+                                lista = np.unique(out)
 
-                        nomeFoto = val_data_list[a]
-                        item = (os.path.join(img_path, nomeFoto + '.jpg'), os.path.join(mask_path, nomeFoto + '.png'))
+                                mezzi_   = [0,21, 1, 2, 4, 6, 7, 14, 19]
+                                animali_ = [0,21, 3 ,8 ,10 ,12 ,13 ,15, 17]
+                                casa_    = [0,21, 5 ,9 ,11, 16, 18, 20]
+                                mezzi   =  all(elem in mezzi_  for elem in lista)
+                                animali =  all(elem in animali_  for elem in lista)
+                                casa    =  all(elem in casa_  for elem in lista)
+                                
+                                if(mezzi):
+                                        print(" VAL ERA UN MEZZO ")
+                                        val_mezzi_data.append(nomeFoto)
+                                        #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                                
+                                elif(animali):
+                                        print(" VAL ERA UN ANIMALE ")
+                                        val_animali_data.append(nomeFoto)
+                                        #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"animali",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                                elif(casa):
+                                        print(" VAL ERA IN CASA ")
+                                        val_casa_data.append(nomeFoto)
+                                        #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"casa",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                                else:
+                                        print("VAL immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
+                                        val_con_cose_data.append(lista)
+                                        val_custom_data.append(nomeFoto)
+                                        print(" ed ha ste classi ",val_con_cose_data)
+                                        val_con_cose_data.clear()
+                                        #   tv.utils.save_image(image,os.path.join(config.sorted_save_path,"random",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
 
-                        a+=1
-                        print("ITERAZIONE: ", I, " su ",config.val_batch_size )
-                        out = mask[I].numpy().flatten()   
-                        lista = np.unique(out)
-
-                        mezzi_   = [0,21, 1, 2, 4, 6, 7, 14, 19]
-                        animali_ = [0,21, 3 ,8 ,10 ,12 ,13 ,15, 17]
-                        casa_    = [0,21, 5 ,9 ,11, 16, 18, 20]
-                        mezzi   =  all(elem in mezzi_  for elem in lista)
-                        animali =  all(elem in animali_  for elem in lista)
-                        casa    =  all(elem in casa_  for elem in lista)
+                                
                         
-                        if(mezzi):
-                            print(" ERA UN MEZZO ")
-                            val_mezzi_data.append(nomeFoto)
-                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
                         
-                        elif(animali):
-                            print(" ERA UN ANIMALE ")
-                            val_animali_data.append(nomeFoto)
-                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"animali",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
-                        elif(casa):
-                            print(" ERA IN CASA ")
-                            val_casa_data.append(nomeFoto)
-                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"casa",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
-                        else:
-                            print("immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
-                            val_con_cose_data.append(lista)
-                            val_custom_data.append(nomeFoto)
-                            print(" ed ha ste classi ",train_con_cose_data)
-                            val_con_cose_data.clear()
-                            #   tv.utils.save_image(image,os.path.join(config.sorted_save_path,"random",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
-
-                        
-                        
-                        
-                  print("MEZZI:" ,len(train_mezzi_data)) 
-                  print("ANIMALI:", len(train_animali_data)) 
-                  print("CASE:", len(train_casa_data)) 
-                  print("A CASO:", len(train_custom_data)) 
-                  print("MEZZI:" ,len(val_mezzi_data)) 
-                  print("ANIMALI:", len(val_animali_data)) 
-                  print("CASE:", len(val_casa_data)) 
-                  print("A CASO:", len(val_custom_data)) 
+        print("TRAIN MEZZI:" ,len(train_mezzi_data)) 
+        print("TRAIN ANIMALI:", len(train_animali_data)) 
+        print("TRAIN CASE:", len(train_casa_data)) 
+        print("TRAIN A CASO:", len(train_custom_data)) 
+        print("VAL MEZZI:" ,len(val_mezzi_data)) 
+        print("VAL ANIMALI:", len(val_animali_data)) 
+        print("VAL CASE:", len(val_casa_data)) 
+        print("VAL A CASO:", len(val_custom_data)) 
 
 
-                  with open(os.path.join(root, 'VOC2012',
+        with open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'train_split_1.txt'), 'w') as file_handler:
 
-                        file_handler.write("\n".join(str(item) for item in train_mezzi_data))
-                  with open(os.path.join(root, 'VOC2012',
+                file_handler.write("\n".join(str(item) for item in train_mezzi_data))
+        with open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'train_split_2.txt'), 'w') as file_handler:
 
-                        file_handler.write("\n".join(str(item) for item in train_animali_data))
-                  with open(os.path.join(root, 'VOC2012',
+                file_handler.write("\n".join(str(item) for item in train_animali_data))
+        with open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'train_split_3.txt'), 'w') as file_handler:
 
-                        file_handler.write("\n".join(str(item) for item in train_casa_data))
-                  with open(os.path.join(root, 'VOC2012',
+                file_handler.write("\n".join(str(item) for item in train_casa_data))
+        with open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'train_split_4.txt'), 'w') as file_handler:
 
-                        file_handler.write("\n".join(str(item) for item in train_custom_data))
+                file_handler.write("\n".join(str(item) for item in train_custom_data))
 
 
-                  with open(os.path.join(root, 'VOC2012',
+        with open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'val_split_1.txt'), 'w') as file_handler:
 
-                        file_handler.write("\n".join(str(item) for item in val_mezzi_data))
-                  with open(os.path.join(root, 'VOC2012',
+                file_handler.write("\n".join(str(item) for item in val_mezzi_data))
+        with open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'val_split_2.txt'), 'w') as file_handler:
 
-                        file_handler.write("\n".join(str(item) for item in val_mezzi_data))
-                  with open(os.path.join(root, 'VOC2012',
+                file_handler.write("\n".join(str(item) for item in val_animali_data))
+        with open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'val_split_3.txt'), 'w') as file_handler:
 
-                        file_handler.write("\n".join(str(item) for item in val_mezzi_data))
-                  with open(os.path.join(root, 'VOC2012',
+                file_handler.write("\n".join(str(item) for item in val_casa_data))
+        with open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'val_split_4.txt'), 'w') as file_handler:
 
-                        file_handler.write("\n".join(str(item) for item in val_mezzi_data))           
+                file_handler.write("\n".join(str(item) for item in val_custom_data))           
 
 
 def main(config):                                                       #il config sarebbe il parser con tanti argomenti dei comandi
