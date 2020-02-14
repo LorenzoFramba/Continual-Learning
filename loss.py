@@ -12,3 +12,4 @@ def sigmLoss(output, target):
     l1 = loss(output, target)
     l2 = loss1(output, target)
     print(l1,l2)
+    

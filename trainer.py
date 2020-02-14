@@ -15,6 +15,7 @@ import time
 from datetime import timedelta
 from torch.autograd import Variable
 import metrics as mt
+import csv
 
 try:
     import nsml
@@ -227,19 +228,8 @@ class Trainer:
             train_custom_data = []
             train_con_cose_data = []
 
-
-            train_mezzi_mask = []
-            train_casa_mask = []
-            train_animali_mask = []
-            train_custom_mask = []
-
-            train_mezzi_imag = []
-            train_casa_imag = []
-            train_animali_imag = []
-            train_custom_imag = []
             root = self.cfg.path
-            train_items = []            #vettore per train
-            val_items = []              #vettore per validation
+            
 
             img_path = os.path.join(root, 'VOC2012', 'JPEGImages')
             mask_path = os.path.join(root, 'VOC2012', 'SegmentationClass')
@@ -249,9 +239,7 @@ class Trainer:
             a = 0
             for i, (image, mask) in enumerate(iter(self.train_data_loader)):
                 
-                mascheraModificata=mask 
                 print("numero", i)
-                print(mascheraModificata.size()) 
 
                     
                     #mezzi:  1 2 4 6 7 14 19
@@ -296,7 +284,6 @@ class Trainer:
                             train_custom_data.append(item)
                             print(" ed ha ste classi ",train_con_cose_data)
                             train_con_cose_data.clear()
-                            #tv.utils.save_image(to_rgb(mask[I]),os.path.join(self.cfg.sorted_save_path,"random",f"predicted_{i}_{I}.jpg")) 
                             tv.utils.save_image(image,os.path.join(self.cfg.sorted_save_path,"random",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
 
                         
@@ -315,45 +302,13 @@ class Trainer:
             print("PATHS RANDOM")
             print(train_custom_data)
 
-                    
-                    # try:    
-                    #         b = np.argmax(np.bincount(out[out != (0 or 21)]))   # ritorno il valore B maggior presente del vettore, diverso dallo sfondo (0) o void (21)                                                             print("i:",i," ,I: ", I," B:" ,b)
-                    #         mascheraModificata[I] = torch.from_numpy(np.where(out!=(b and 0), 21, out).reshape( self.cfg.h_image_size, self.cfg.w_image_size)) #sostituisco tutti gli altri valori diversi da B o background, con un valore nullo                        mascheraModificata = torch.from_numpy(newReplaced)
-                    #         print(i, " fatto")
-                    # except:
-                    #         mascheraModificata[I] = mask[I] 
-                    #         print(i, " An exception occurred")
-                    # if (b<12):
-                    #         train_data_1_mask.append([mascheraModificata[I]])
-                    #         train_data_1_imag.append([image[I]])
-                    # elif(b<17):
-                    #         train_data_2_mask.append([mascheraModificata[I]])   
-                    #         train_data_2_imag.append([image[I]])
-                    # else:
-                    #         train_data_3_mask.append([mascheraModificata[I]])
-                    #         train_data_3_imag.append([image[I]])
-            
 
-            # train_data_1 = self.unisci_tensori(train_data_1_imag,train_data_1_mask)
-            # train_data_2 = self.unisci_tensori(train_data_2_imag,train_data_2_mask)
-            # train_data_3 = self.unisci_tensori(train_data_3_imag,train_data_3_mask)
-            
-            
-            
-            # print(len(train_data_1))
-            # print(len(train_data_2))
-            # print(len(train_data_3))
-
-
-            # ########### Iterate over data ###########
-            
-            # for I, (input_images, target_masks) in enumerate(train_data_1):    
-            
-
-            #     print("input",input_images.size())
-            #     print(type(input_images))
-            #     print(type(target_masks))
-            #     print("target",target_masks.size())
+            with open('classi.csv', 'w', newline='') as myfile:
+                wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+                wr.writerow(train_mezzi_data)
+                wr.writerow(train_animali_data)
+                wr.writerow(train_casa_data)
+                wr.writerow(train_custom_data)
 
 
 
