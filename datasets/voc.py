@@ -92,16 +92,16 @@ def to_rgb(xs):
     rgbs = torch.from_numpy(rgbs.transpose(0, 3, 1, 2))
     return rgbs
 
-def make_path(root):                #prende le imagini e le maschere e le unisce in un'unico item.
+def make_path(root, train_list, val_list):                #prende le imagini e le maschere e le unisce in un'unico item.
     train_items = []            #vettore per train
     val_items = []              #vettore per validation
 
     img_path = os.path.join(root, 'VOC2012', 'JPEGImages')
     mask_path = os.path.join(root, 'VOC2012', 'SegmentationClass')
     train_data_list = [l.strip('\n') for l in open(os.path.join(root, 'VOC2012',
-                'ImageSets', 'Segmentation', 'train.txt')).readlines()]
+                'ImageSets', 'Segmentation', train_list)).readlines()]
     val_data_list   = [l.strip('\n') for l in open(os.path.join(root, 'VOC2012',
-                'ImageSets', 'Segmentation', 'train.txt')).readlines()]  #'train.txt'  -> val.txt ?
+                'ImageSets', 'Segmentation', val_list)).readlines()]  #'train.txt'  -> val.txt ?
 
     for it in train_data_list:
         item = (os.path.join(img_path, it + '.jpg'), os.path.join(mask_path, it + '.png'))
@@ -118,13 +118,14 @@ def make_path(root):                #prende le imagini e le maschere e le unisce
 
 
 class VOC(data.Dataset):
-    def __init__(self, root, image_size, dataset_type, transform=None, target_transform=to_mask):
+    def __init__(self, root, image_size, dataset_type, transform=None,
+                 target_transform=to_mask, train_list="train.txt", val_list="train.txt"):
         """
         root - parent of data file
         dataset_type - ['train', 'val']
         """
         assert dataset_type in ['train', 'val'], 'dataset_type should be in train/val'
-        self.train_items, self.val_items = make_path(root)
+        self.train_items, self.val_items = make_path(root, train_list, val_list)
         self.h_image_size, self.w_image_size = image_size[0], image_size[1]
         self.dataset_type = dataset_type
         self.transform = transform

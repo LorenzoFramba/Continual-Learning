@@ -54,7 +54,7 @@ def get_loader(config):
         
         return train_data_loader_1, val_data_loader_1
 
-def separa(train_data_loader):
+def separa(train_data_loader, val_data_loader):
             train_mezzi_data = []
             train_casa_data = []
             train_animali_data = []
@@ -69,6 +69,10 @@ def separa(train_data_loader):
             mask_path = os.path.join(root, 'VOC2012', 'SegmentationClass')
             train_data_list = [l.strip('\n') for l in open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'train.txt')).readlines()]
+            val_data_list = [l.strip('\n') for l in
+                               open(os.path.join(root, 'VOC2012',
+                                                 'ImageSets', 'Segmentation',
+                                                 'val.txt')).readlines()]
 
             a = 0
             for i, (image, mask) in enumerate(iter(train_data_loader)):
@@ -100,21 +104,21 @@ def separa(train_data_loader):
                         
                         if(mezzi):
                             print(" ERA UN MEZZO ")
-                            train_mezzi_data.append(item)
+                            train_mezzi_data.append(nomeFoto)
                             tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
                         
                         elif(animali):
                             print(" ERA UN ANIMALE ")
-                            train_animali_data.append(item)
+                            train_animali_data.append(nomeFoto)
                             tv.utils.save_image(image,os.path.join(config.sorted_save_path,"animali",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
                         elif(casa):
                             print(" ERA IN CASA ")
-                            train_casa_data.append(item)
+                            train_casa_data.append(nomeFoto)
                             tv.utils.save_image(image,os.path.join(config.sorted_save_path,"casa",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
                         else:
                             print("immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
                             train_con_cose_data.append(lista)
-                            train_custom_data.append(item)
+                            train_custom_data.append(nomeFoto)
                             print(" ed ha ste classi ",train_con_cose_data)
                             train_con_cose_data.clear()
                             tv.utils.save_image(image,os.path.join(config.sorted_save_path,"random",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
@@ -134,8 +138,10 @@ def separa(train_data_loader):
             print(train_casa_data)
             print("PATHS RANDOM")
             print(train_custom_data)
+            with open(os.path.join(root, 'VOC2012',
+                            'ImageSets', 'Segmentation', 'train_split_1.txt'), 'w') as file_handler:
 
-
+                file_handler.write("\n".join(str(item) for item in train_mezzi_data))
             with open('classi.csv', 'w', newline='') as myfile:
                 wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
                 wr.writerow(train_mezzi_data)
@@ -153,14 +159,18 @@ def main(config):                                                       #il conf
     for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
         make_dir(os.path.join(config.sample_save_path, folder))         #crea le cartelle in questione
     for folder in ["mezzi","animali","casa","random"]:                #tra i vari folders delle foto
-        make_dir(os.path.join(config.sorted_save_path, folder))    
+        make_dir(os.path.join(config.sorted_save_path, folder))
     if config.mode == 'train':
         train_data_loader_1, val_data_loader_1= get_loader(config)         #associa ai due dataset i valori. presi dal config
         trainer_1 = Trainer(train_data_loader=train_data_loader_1,          #fa partire il training, passando i due dataset
-                         val_data_loader=val_data_loader_1,
-                         config=config)
-        separa(train_data_loader_1)
-        trainer_1.train_val()                                             #ora che la classe e' stata istanziata, fa partire il training
+                            val_data_loader=val_data_loader_1,
+                            config=config)
+    if config.mode == "split_dataset":
+        config.train_list = "train.txt"
+        config.val_list = "val.txt"
+        train_data_loader_1, val_data_loader_1 = get_loader(
+            config)  # associa ai due dataset i valori. presi dal config
+        separa(train_data_loader_1, val_data_loader_1)                                            #ora che la classe e' stata istanziata, fa partire il training
 
 ########### Config Parameters ###########
 
@@ -168,7 +178,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()                                  #libreria di linea di comando da string ad oggetti di python
 
                                                                         #add_argument semplicemente popola il parser
-    parser.add_argument('--mode', type=str, default='train', choices=['train'])
+    parser.add_argument('--mode', type=str, default='train', choices=['train', "split_dataset"])
     parser.add_argument('--model', type=str, default='unet', choices=['unet', 'fcn8', 'pspnet_avg',
                                                                       'pspnet_max', 'dfnet'])
     parser.add_argument('--dataset', type=str, default='voc', choices=['voc'])
@@ -203,6 +213,8 @@ if __name__ == '__main__':
     parser.add_argument('--which_epoch', type=str, default='latest',
                              help='which epoch to load? set to latest to use latest cached model')
     parser.add_argument("--num_workers", type=int, default=4, help="num of threads for multithreading")
+    parser.add_argument("--train_list", type=str, default="train.txt")
+    parser.add_argument("--val_list", type=str, default="val.txt")
 
     # MISC
 
