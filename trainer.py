@@ -69,8 +69,17 @@ class Trainer:
     ########### helper saving function that can be used by subclasses ###########
     def save_network(self, network, network_label, epoch_label, gpu_ids,
                      epoch, optimizer, scheduler):
+
+        path = self.cfg.model_save_path
+        if self.cfg.step == 'split_1':
+                        path= "../gdrive/My\ Drive/tesi/models_split1"
+        elif self.cfg.step == 'split_2':
+                        path= "../gdrive/My\ Drive/tesi/models_split2"
+        elif self.cfg.step == 'split_3':
+                        path= "../gdrive/My\ Drive/tesi/models_split3"
+                        
         save_filename = '%s_net_%s.pth' % (epoch_label, network_label)                  #salva la epoca ed il tipo di rete ( UNET) 
-        save_path = os.path.join(self.cfg.model_save_path, save_filename)               #il path dove viene salvato
+        save_path = os.path.join(path, save_filename)               #il path dove viene salvato
         print(save_path)                                                                #a schermo
         state = {
             "epoch": epoch + 1,
@@ -85,8 +94,16 @@ class Trainer:
     ########### helper loading function that can be used by subclasses ###########
     def load_network(self, network, network_label, epoch_label,
                      epoch, optimizer, scheduler, save_dir=''):
+        path = self.cfg.model_save_path
+        if self.cfg.step == 'split_1':
+                        path= "../gdrive/My\ Drive/tesi/models_split1"
+        elif self.cfg.step == 'split_2':
+                        path= "../gdrive/My\ Drive/tesi/models_split2"
+        elif self.cfg.step == 'split_3':
+                        path= "../gdrive/My\ Drive/tesi/models_split3"
+
         save_filename = '%s_net_%s.pth' % (epoch_label, network_label)  
-        save_dir = self.cfg.model_save_path
+        save_dir = path
         save_path = os.path.join(save_dir, save_filename)
         if not os.path.isfile(save_path):                                               #se non si trova nel path
             print('%s not exists yet!' % save_path)                                     #diciamo che non esiste! 
@@ -291,9 +308,18 @@ class Trainer:
                     union_meter_epoch.update(union)
                     class_acc_meter_epoch.update_confusion_matrix(confusion_matrix_epoch)
                     ########### printing out the model ###########
-                    tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(self.cfg.sample_save_path,"generated",f"predicted_{epoch}_{I}.jpg")) 
-                    tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(self.cfg.sample_save_path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  
-                    tv.utils.save_image(inputs.cpu(),os.path.join(self.cfg.sample_save_path,"inputs",f"input_{epoch}_{I}.jpg"),normalize=True, range=(-1,1))  
+
+                    path=self.cfg.sample_save_path    
+                    if self.cfg.step == 'split_1':
+                        path= "../gdrive/My\ Drive/tesi/samples_split1"
+                    elif self.cfg.step == 'split_2':
+                        path= "../gdrive/My\ Drive/tesi/samples_split2"
+                    elif self.cfg.step == 'split_3':
+                        path= "../gdrive/My\ Drive/tesi/samples_split3"
+
+                    tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(path,"generated",f"predicted_{epoch}_{I}.jpg")) 
+                    tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  
+                    tv.utils.save_image(inputs.cpu(),os.path.join(path,"inputs",f"input_{epoch}_{I}.jpg"),normalize=True, range=(-1,1))  
 
                     seconds = time.time() - start_mini_batch        
                     elapsed = str(timedelta(seconds=seconds))

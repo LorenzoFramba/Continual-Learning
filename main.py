@@ -232,10 +232,23 @@ def main(config):                                                       #il conf
     for folder in ["mezzi","animali","casa","random"]:                #tra i vari folders delle foto
         make_dir(os.path.join(config.sorted_save_path, folder))
     if config.mode == 'train':
+        if config.step == 'default':   
+                config.train_list = "train.txt"
+                config.val_list = "val.txt"    
+        if config.step == 'split_1':   
+                config.train_list = "train_split_1.txt"
+                config.val_list = "val_split_1.txt"
+        if config.step == 'split_2': 
+                config.train_list = "train_split_2.txt"
+                config.val_list = "val_split_2.txt"
+        if config.step == 'split_3': 
+                config.train_list = "train_split_3.txt"
+                config.val_list = "val_split_3.txt"
         train_data_loader_1, val_data_loader_1= get_loader(config)         #associa ai due dataset i valori. presi dal config
         trainer_1 = Trainer(train_data_loader=train_data_loader_1,          #fa partire il training, passando i due dataset
                             val_data_loader=val_data_loader_1,
                             config=config)
+        trainer_1.train_val()
     if config.mode == "split_dataset":
         config.train_list = "train.txt"
         config.val_list = "val.txt"
@@ -252,6 +265,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default='train', choices=['train', "split_dataset"])
     parser.add_argument('--model', type=str, default='unet', choices=['unet', 'fcn8', 'pspnet_avg',
                                                                       'pspnet_max', 'dfnet'])
+    parser.add_argument('--step', type=str, default='default', choices=['split_1', 'split_2','split_3','default'])
     parser.add_argument('--dataset', type=str, default='voc', choices=['voc'])
 
 
