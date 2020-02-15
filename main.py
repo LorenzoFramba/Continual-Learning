@@ -27,11 +27,24 @@ def get_loader(config):
                 transforms.ToTensor(),                                  #trasforma l'immagine in tensor ( con C x H x W, cioe Channels, Height and Width)
                 transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))  #normalizza il tensor nella media e deviazione standard
         ])
-
+        train_list="ciao"
+        val_list="ciao"
+        if config.step == 'default':   
+                train_list = "train.txt"
+                val_list = "val.txt"    
+        if config.step == 'split_1':   
+                train_list = "train_split_1.txt"
+                val_list = "val_split_1.txt"
+        if config.step == 'split_2': 
+                train_list = "train_split_2.txt"
+                val_list = "val_split_2.txt"
+        if config.step == 'split_3': 
+                train_list = "train_split_3.txt"
+                val_list = "val_split_3.txt"
         train_data_set = VOC(root=config.path,                          #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
                                 image_size=(config.h_image_size, config.w_image_size),  #h_image_size e w_image_size  sono 256 come argomento
                                 dataset_type='train',
-                                transform=transform)
+                                transform=transform, train_list=train_list ,val_list=val_list )
 
 
                 
@@ -44,7 +57,7 @@ def get_loader(config):
         val_data_set = VOC(root=config.path,                            #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
                                 image_size=(config.h_image_size, config.w_image_size),#h_image_size e w_image_size  sono 256 come argomento
                                 dataset_type='val',
-                                transform=transform)
+                                transform=transform, train_list=train_list, val_list=val_list )
 
         val_data_loader_1 = DataLoader(val_data_set,                    #crea un dataset con un batch size
                                 batch_size=config.val_batch_size,  #16 come argomento
@@ -224,11 +237,24 @@ def separa(train_data_loader, val_data_loader):
 def main(config):                                                       #il config sarebbe il parser con tanti argomenti dei comandi
     import sys
     print(sys.version)
-    make_dir(config.model_save_path)                                    #crea cartella del modello
-    make_dir(config.sample_save_path)                                   #crea cartella del sample
+    make_dir(config.model_save_path+"/model_default")                                    #crea cartella del modello
+    make_dir(config.model_save_path+"/models_split1") 
+    make_dir(config.model_save_path+"/models_split2") 
+    make_dir(config.model_save_path+"/models_split3") 
+
     make_dir(config.sorted_save_path)
+    make_dir(config.sample_save_path+"/samples_default")                                   #crea cartella del sample
+    make_dir(config.sample_save_path+"/samples_split1")
+    make_dir(config.sample_save_path+"/samples_split2")
+    make_dir(config.sample_save_path+"/samples_split3")
     for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
-        make_dir(os.path.join(config.sample_save_path, folder))         #crea le cartelle in questione
+        make_dir(os.path.join(config.sample_save_path+"/samples_default", folder))         #crea le cartelle in questione
+    for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
+        make_dir(os.path.join(config.sample_save_path+"/samples_split1", folder)) 
+    for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
+        make_dir(os.path.join(config.sample_save_path+"/samples_split1", folder)) 
+    for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
+        make_dir(os.path.join(config.sample_save_path+"/samples_split1", folder))     
     for folder in ["mezzi","animali","casa","random"]:                #tra i vari folders delle foto
         make_dir(os.path.join(config.sorted_save_path, folder))
     if config.mode == 'train':
@@ -262,12 +288,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()                                  #libreria di linea di comando da string ad oggetti di python
 
                                                                         #add_argument semplicemente popola il parser
+    parser.add_argument('--step', type=str, default='split_1', choices=['split_1', 'split_2','split_3','default'])
     parser.add_argument('--mode', type=str, default='train', choices=['train', "split_dataset"])
-    parser.add_argument('--model', type=str, default='unet', choices=['unet', 'fcn8', 'pspnet_avg',
-                                                                      'pspnet_max', 'dfnet'])
-    parser.add_argument('--step', type=str, default='default', choices=['split_1', 'split_2','split_3','default'])
+    parser.add_argument('--model', type=str, default='unet', choices=['unet', 'fcn8', 'pspnet_avg', 'pspnet_max', 'dfnet'])
     parser.add_argument('--dataset', type=str, default='voc', choices=['voc'])
-
+   
 
     # Training setting
     parser.add_argument('--n_iters', type=int, default=10000)
@@ -298,8 +323,8 @@ if __name__ == '__main__':
     parser.add_argument('--which_epoch', type=str, default='latest',
                              help='which epoch to load? set to latest to use latest cached model')
     parser.add_argument("--num_workers", type=int, default=4, help="num of threads for multithreading")
-    parser.add_argument("--train_list", type=str, default="train.txt")
-    parser.add_argument("--val_list", type=str, default="val.txt")
+    parser.add_argument("--train_list", type=str, default="train_split_1.txt")
+    parser.add_argument("--val_list", type=str, default="val_split_1.txt")
 
     # MISC
 
