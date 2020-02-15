@@ -70,13 +70,15 @@ class Trainer:
     def save_network(self, network, network_label, epoch_label, gpu_ids,
                      epoch, optimizer, scheduler):
 
-        path = self.cfg.model_save_path
+
         if self.cfg.step == 'split_1':
-                        path= "../gdrive/My\ Drive/tesi/models_split1"
+            path = self.cfg.model_save_path+"/models_split1"
         elif self.cfg.step == 'split_2':
-                        path= "../gdrive/My\ Drive/tesi/models_split2"
+            path = self.cfg.model_save_path+"/models_split2"
         elif self.cfg.step == 'split_3':
-                        path= "../gdrive/My\ Drive/tesi/models_split3"
+            path = self.cfg.model_save_path+"/models_split3"
+        elif self.cfg.step == 'default':
+            path = self.cfg.model_save_path+"/model_default"
                         
         save_filename = '%s_net_%s.pth' % (epoch_label, network_label)                  #salva la epoca ed il tipo di rete ( UNET) 
         save_path = os.path.join(path, save_filename)               #il path dove viene salvato
@@ -94,13 +96,18 @@ class Trainer:
     ########### helper loading function that can be used by subclasses ###########
     def load_network(self, network, network_label, epoch_label,
                      epoch, optimizer, scheduler, save_dir=''):
-        path = self.cfg.model_save_path
+        
+        
+
         if self.cfg.step == 'split_1':
-                        path= "../gdrive/My\ Drive/tesi/models_split1"
+            path = self.cfg.model_save_path+"/models_split1"
         elif self.cfg.step == 'split_2':
-                        path= "../gdrive/My\ Drive/tesi/models_split2"
+            path = self.cfg.model_save_path+"/models_split2"
         elif self.cfg.step == 'split_3':
-                        path= "../gdrive/My\ Drive/tesi/models_split3"
+            path = self.cfg.model_save_path+"/models_split3"
+        elif self.cfg.step == 'default':
+            path = self.cfg.model_save_path+"/model_default"
+
 
         save_filename = '%s_net_%s.pth' % (epoch_label, network_label)  
         save_dir = path
@@ -311,11 +318,13 @@ class Trainer:
 
                     path=self.cfg.sample_save_path    
                     if self.cfg.step == 'split_1':
-                        path= "../gdrive/My\ Drive/tesi/samples_split1"
+                        path=self.cfg.sample_save_path +"/samples_split1"
                     elif self.cfg.step == 'split_2':
-                        path= "../gdrive/My\ Drive/tesi/samples_split2"
+                        path=self.cfg.sample_save_path +"/samples_split2"
                     elif self.cfg.step == 'split_3':
-                        path= "../gdrive/My\ Drive/tesi/samples_split3"
+                        path=self.cfg.sample_save_path +"/samples_split3"
+                    elif self.cfg.step == 'default':
+                        path=self.cfg.sample_save_path +"/samples_default"
 
                     tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(path,"generated",f"predicted_{epoch}_{I}.jpg")) 
                     tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  
