@@ -124,7 +124,7 @@ class VOC(data.Dataset):
         root - parent of data file
         dataset_type - ['train', 'val']
         """
-
+        print("list",train_list,val_list)
         assert dataset_type in ['train', 'val'], 'dataset_type should be in train/val'
         self.train_items, self.val_items = make_path(root, train_list, val_list)
         self.h_image_size, self.w_image_size = image_size[0], image_size[1]

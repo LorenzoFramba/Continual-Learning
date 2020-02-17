@@ -27,8 +27,8 @@ def get_loader(config):
                 transforms.ToTensor(),                                  #trasforma l'immagine in tensor ( con C x H x W, cioe Channels, Height and Width)
                 transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))  #normalizza il tensor nella media e deviazione standard
         ])
-        train_list="ciao"
-        val_list="ciao"
+        train_list= ""
+        val_list= ""
         if config.step == 'default':   
                 train_list = "train.txt"
                 val_list = "val.txt"    
@@ -50,7 +50,7 @@ def get_loader(config):
                 
         train_data_loader_1 = DataLoader(train_data_set,                  #crea un dataset con un batch size
                                         batch_size=config.train_batch_size,  # 16 come argomento
-                                        shuffle=False,    #METTILO true
+                                        shuffle=True,    #METTILO true
                                         drop_last=True,
                                         num_workers=config.num_workers, pin_memory=True) 
         
@@ -61,7 +61,7 @@ def get_loader(config):
 
         val_data_loader_1 = DataLoader(val_data_set,                    #crea un dataset con un batch size
                                 batch_size=config.val_batch_size,  #16 come argomento
-                                shuffle=False,
+                                shuffle=True,
                                 drop_last=True,
                                 num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
 
@@ -78,10 +78,6 @@ def separa(train_data_loader, val_data_loader):
 
         val_mezzi_data = []
         val_tv_monitor = []
-           
-        val_custom_data = []
-        val_con_cose_data = []
-
 
         root = config.path
             
@@ -150,11 +146,11 @@ def separa(train_data_loader, val_data_loader):
                         
                         
                         if(quasi_tutto):
-                            print("TRAIN NON HA UN MONITOR")
+                            print("VAL NON HA UN MONITOR")
                             val_mezzi_data.append(nomeFoto)
                             #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))              
                         else:
-                            print("TRAIN immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
+                            print("VAL immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
                             train_con_cose_data.append(lista)
                             val_tv_monitor.append(nomeFoto)
                             print(" ed ha ste classi ",train_con_cose_data)
@@ -235,7 +231,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()                                  #libreria di linea di comando da string ad oggetti di python
 
                                                                         #add_argument semplicemente popola il parser
-    parser.add_argument('--step', type=str, default='split_1', choices=['split_1', 'split_2','default'])
+    parser.add_argument('--step', type=str, default='default', choices=['split_1', 'split_2','default'])
     parser.add_argument('--mode', type=str, default='train', choices=['train', "split_dataset"])
     parser.add_argument('--model', type=str, default='unet', choices=['unet', 'fcn8', 'pspnet_avg', 'pspnet_max', 'dfnet'])
     parser.add_argument('--dataset', type=str, default='voc', choices=['voc'])
