@@ -50,7 +50,7 @@ def get_loader(config):
                 
         train_data_loader_1 = DataLoader(train_data_set,                  #crea un dataset con un batch size
                                         batch_size=config.train_batch_size,  # 16 come argomento
-                                        shuffle=False,    #METTILO true
+                                        shuffle=True,    #METTILO true
                                         drop_last=True,
                                         num_workers=config.num_workers, pin_memory=True) 
         
@@ -61,7 +61,7 @@ def get_loader(config):
 
         val_data_loader_1 = DataLoader(val_data_set,                    #crea un dataset con un batch size
                                 batch_size=config.val_batch_size,  #16 come argomento
-                                shuffle=False,
+                                shuffle=True,
                                 drop_last=True,
                                 num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
 
