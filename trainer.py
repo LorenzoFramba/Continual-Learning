@@ -296,8 +296,8 @@ class Trainer:
                     loss=running_loss / print_number))
 
             ########### eval phase  ###########
-            if (epoch + 1) % 200 == 0:
-                print("TESTINGGGGGGGGGGG")
+            if (epoch + 1) % 300 == 0:
+                print("TESTING")
                 test_acc, iou, confusion_matrix = self.test()
                 seconds = time.time() - start_epoch                                 #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                 elapsed = str(timedelta(seconds=seconds))
@@ -318,7 +318,7 @@ class Trainer:
                     test = test_acc * 100,
                     time_epoch=elapsed, time_start=elapsed_start,
                     loss=running_loss / print_number))
-                print("FINE TESTIIINNNGGGG")
+                print("FINE TESTING")
             epoch +=1
 
 
