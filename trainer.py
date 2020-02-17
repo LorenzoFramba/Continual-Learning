@@ -75,8 +75,6 @@ class Trainer:
             path = self.cfg.model_save_path+"/models_split1"
         elif self.cfg.step == 'split_2':
             path = self.cfg.model_save_path+"/models_split2"
-        elif self.cfg.step == 'split_3':
-            path = self.cfg.model_save_path+"/models_split3"
         elif self.cfg.step == 'default':
             path = self.cfg.model_save_path+"/model_default"
                         
@@ -103,8 +101,6 @@ class Trainer:
             path = self.cfg.model_save_path+"/models_split1"
         elif self.cfg.step == 'split_2':
             path = self.cfg.model_save_path+"/models_split2"
-        elif self.cfg.step == 'split_3':
-            path = self.cfg.model_save_path+"/models_split3"
         elif self.cfg.step == 'default':
             path = self.cfg.model_save_path+"/model_default"
 
@@ -130,7 +126,7 @@ class Trainer:
     ########### model builder ###########
     def build_model(self):
         
-        self.model = unet.UNet(num_classes=21, in_dim=3, conv_dim=64)
+        self.model = unet.UNet(num_classes=20, in_dim=3, conv_dim=64)
         self.optim = optim.Adam(self.model.parameters(),                                #usiamo adam per ottimizzazione stocastica come OPTIM, passangogli i parametri
                                 lr=self.cfg.lr,                                         #settiamo il learning rate
                                 betas=[self.cfg.beta1, self.cfg.beta2])                 #le due Beta, cioe' la probabilita' di accettare l'ipotesi quando e' falsa  (coefficients used for computing running averages of gradient and its square )
@@ -154,95 +150,6 @@ class Trainer:
                     if torch.is_tensor(v):
                         state[k] = v.cuda()
 
-    def unisci_tensori(self,train_data_1_imag,train_data_1_mask):
-        
-        
-        list_data_1 = []
-        list_data_2 = []
-        list_data_3 = []
-        
-        train_data_1 = []
-        train_data_2 = []
-        cont =0
-        print(len(train_data_1_imag))
-        while( cont < len(train_data_1_imag) ):
-            
-            list_data_1.append(train_data_1_mask[cont])
-            list_data_2.append(train_data_1_imag[cont])
-
-            if ((cont%15==0 and cont != 0) or cont == (len(train_data_1_imag)-1) ):
-                
-                ####  questo pezzo di codice e' un abominio. purtroppo pytorch non permette di usare stack su cicli per concatenare tensori :(   ( che vergogna) ####
-                if(len(list_data_1)==1):
-                    train_data_1 = torch.stack([list_data_1[0][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0]])
-                elif(len(list_data_1)==2):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0]])
-                elif(len(list_data_1)==3):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0]])
-                elif(len(list_data_1)==4):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0]])
-
-                elif(len(list_data_1)==5):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0]])
-
-                elif(len(list_data_1)==6):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0]])
-
-                elif(len(list_data_1)==7):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0]])
-
-                elif(len(list_data_1)==8):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0]])
-
-                elif(len(list_data_1)==9):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0]])
-
-                elif(len(list_data_1)==10):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0]])
-
-                elif(len(list_data_1)==11):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0]])
-
-                elif(len(list_data_1)==12):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0],list_data_1[11][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0],list_data_2[11][0]])
-
-                elif(len(list_data_1)==13):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0],list_data_1[11][0],list_data_1[12][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0],list_data_2[11][0],list_data_2[12][0]])
-
-                elif(len(list_data_1)==14):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0],list_data_1[11][0],list_data_1[12][0],list_data_1[13][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0],list_data_2[11][0],list_data_2[12][0],list_data_2[13][0]])
-
-                elif(len(list_data_1)==15):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0],list_data_1[11][0],list_data_1[12][0],list_data_1[13][0],list_data_1[14][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0],list_data_2[11][0],list_data_2[12][0],list_data_2[13][0],list_data_2[14][0]])
-
-                elif(len(list_data_1)==16):
-                    train_data_1 = torch.stack([list_data_1[0][0],list_data_1[1][0],list_data_1[2][0],list_data_1[3][0],list_data_1[4][0],list_data_1[5][0],list_data_1[6][0],list_data_1[7][0],list_data_1[8][0],list_data_1[9][0],list_data_1[10][0],list_data_1[11][0],list_data_1[12][0],list_data_1[13][0],list_data_1[14][0],list_data_1[15][0]])
-                    train_data_2 = torch.stack([list_data_2[0][0],list_data_2[1][0],list_data_2[2][0],list_data_2[3][0],list_data_2[4][0],list_data_2[5][0],list_data_2[6][0],list_data_2[7][0],list_data_2[8][0],list_data_2[9][0],list_data_2[10][0],list_data_2[11][0],list_data_2[12][0],list_data_2[13][0],list_data_2[14][0],list_data_2[15][0]])
-
-                list_data_3.append([train_data_2,train_data_1])
-                list_data_1.clear()
-                list_data_2.clear() 
-
-            cont = cont+1 
-        
-        return list_data_3
-
- 
     ########### trainer phase ###########
     def train_val(self):
 
@@ -321,8 +228,6 @@ class Trainer:
                         path=self.cfg.sample_save_path +"/samples_split1"
                     elif self.cfg.step == 'split_2':
                         path=self.cfg.sample_save_path +"/samples_split2"
-                    elif self.cfg.step == 'split_3':
-                        path=self.cfg.sample_save_path +"/samples_split3"
                     elif self.cfg.step == 'default':
                         path=self.cfg.sample_save_path +"/samples_default"
 

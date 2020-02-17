@@ -50,7 +50,7 @@ def get_loader(config):
                 
         train_data_loader_1 = DataLoader(train_data_set,                  #crea un dataset con un batch size
                                         batch_size=config.train_batch_size,  # 16 come argomento
-                                        shuffle=True,    #METTILO true
+                                        shuffle=False,    #METTILO true
                                         drop_last=True,
                                         num_workers=config.num_workers, pin_memory=True) 
         
@@ -61,7 +61,7 @@ def get_loader(config):
 
         val_data_loader_1 = DataLoader(val_data_set,                    #crea un dataset con un batch size
                                 batch_size=config.val_batch_size,  #16 come argomento
-                                shuffle=True,
+                                shuffle=False,
                                 drop_last=True,
                                 num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
 
@@ -70,16 +70,14 @@ def get_loader(config):
 
 def separa(train_data_loader, val_data_loader):
         train_mezzi_data = []
-        train_casa_data = []
-        train_animali_data = []
+
            
-        train_custom_data = []
+        train_tv_monitor = []
         train_con_cose_data = []
 
 
         val_mezzi_data = []
-        val_casa_data = []
-        val_animali_data = []
+        val_tv_monitor = []
            
         val_custom_data = []
         val_con_cose_data = []
@@ -113,33 +111,21 @@ def separa(train_data_loader, val_data_loader):
                         out = mask[I].numpy().flatten()   
                         lista = np.unique(out)
 
-                        mezzi_   = [0,21, 1, 2, 4, 6, 7, 14, 19]
-                        animali_ = [0,21, 3 ,8 ,10 ,12 ,13 ,15, 17]
-                        casa_    = [0,21, 5 ,9 ,11, 16, 18, 20]
-                        mezzi   =  all(elem in mezzi_  for elem in lista)
-                        animali =  all(elem in animali_  for elem in lista)
-                        casa    =  all(elem in casa_  for elem in lista)
+                        quasi_tutto_   = [0,21, 1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+                        quasi_tutto   =  all(elem in quasi_tutto_  for elem in lista)
                         
-                        if(mezzi):
-                            print("TRAIN  ERA UN MEZZO ")
+                        
+                        if(quasi_tutto):
+                            print("TRAIN NON HA UN MONITOR")
                             train_mezzi_data.append(nomeFoto)
-                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
-                        
-                        elif(animali):
-                            print("TRAIN  ERA UN ANIMALE ")
-                            train_animali_data.append(nomeFoto)
-                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"animali",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
-                        elif(casa):
-                            print("TRAIN  ERA IN CASA ")
-                            train_casa_data.append(nomeFoto)
-                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"casa",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))              
                         else:
                             print("TRAIN immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
                             train_con_cose_data.append(lista)
-                            train_custom_data.append(nomeFoto)
+                            train_tv_monitor.append(nomeFoto)
                             print(" ed ha ste classi ",train_con_cose_data)
                             train_con_cose_data.clear()
-                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"random",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
+                            
                 
         b = 0
         
@@ -150,6 +136,8 @@ def separa(train_data_loader, val_data_loader):
                         if(b<1449):
                                 nomeFoto = val_data_list[b]
                                 print("numero b: ", b)
+                                out = mask[I].numpy().flatten()   
+                                lista = np.unique(out)
                                 item = (os.path.join(img_path, nomeFoto + '.jpg'), os.path.join(mask_path, nomeFoto + '.png'))
                                 
                                 b+=1
@@ -157,45 +145,26 @@ def separa(train_data_loader, val_data_loader):
                                 out = mask[I].numpy().flatten()   
                                 lista = np.unique(out)
 
-                                mezzi_   = [0,21, 1, 2, 4, 6, 7, 14, 19]
-                                animali_ = [0,21, 3 ,8 ,10 ,12 ,13 ,15, 17]
-                                casa_    = [0,21, 5 ,9 ,11, 16, 18, 20]
-                                mezzi   =  all(elem in mezzi_  for elem in lista)
-                                animali =  all(elem in animali_  for elem in lista)
-                                casa    =  all(elem in casa_  for elem in lista)
-                                
-                                if(mezzi):
-                                        print(" VAL ERA UN MEZZO ")
-                                        val_mezzi_data.append(nomeFoto)
-                                        #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
-                                
-                                elif(animali):
-                                        print(" VAL ERA UN ANIMALE ")
-                                        val_animali_data.append(nomeFoto)
-                                        #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"animali",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
-                                elif(casa):
-                                        print(" VAL ERA IN CASA ")
-                                        val_casa_data.append(nomeFoto)
-                                        #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"casa",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
-                                else:
-                                        print("VAL immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
-                                        val_con_cose_data.append(lista)
-                                        val_custom_data.append(nomeFoto)
-                                        print(" ed ha ste classi ",val_con_cose_data)
-                                        val_con_cose_data.clear()
-                                        #   tv.utils.save_image(image,os.path.join(config.sorted_save_path,"random",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))  
-
-                                
+                                quasi_tutto_   = [0,21, 1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+                                quasi_tutto   =  all(elem in quasi_tutto_  for elem in lista)
                         
                         
-        print("TRAIN MEZZI:" ,len(train_mezzi_data)) 
-        print("TRAIN ANIMALI:", len(train_animali_data)) 
-        print("TRAIN CASE:", len(train_casa_data)) 
-        print("TRAIN A CASO:", len(train_custom_data)) 
-        print("VAL MEZZI:" ,len(val_mezzi_data)) 
-        print("VAL ANIMALI:", len(val_animali_data)) 
-        print("VAL CASE:", len(val_casa_data)) 
-        print("VAL A CASO:", len(val_custom_data)) 
+                        if(quasi_tutto):
+                            print("TRAIN NON HA UN MONITOR")
+                            val_mezzi_data.append(nomeFoto)
+                            #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))              
+                        else:
+                            print("TRAIN immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
+                            train_con_cose_data.append(lista)
+                            val_tv_monitor.append(nomeFoto)
+                            print(" ed ha ste classi ",train_con_cose_data)
+                            train_con_cose_data.clear()
+                        
+                        
+        print("TRAIN NO DIVANI:" ,len(train_mezzi_data)) 
+        print("TRAIN TUTTO:", len(train_tv_monitor)) 
+        print("VAL NO DIVANI:" ,len(val_mezzi_data)) 
+        print("VAL TUTTO:", len(val_tv_monitor)) 
 
 
         with open(os.path.join(root, 'VOC2012',
@@ -205,16 +174,7 @@ def separa(train_data_loader, val_data_loader):
         with open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'train_split_2.txt'), 'w') as file_handler:
 
-                file_handler.write("\n".join(str(item) for item in train_animali_data))
-        with open(os.path.join(root, 'VOC2012',
-                            'ImageSets', 'Segmentation', 'train_split_3.txt'), 'w') as file_handler:
-
-                file_handler.write("\n".join(str(item) for item in train_casa_data))
-        with open(os.path.join(root, 'VOC2012',
-                            'ImageSets', 'Segmentation', 'train_split_4.txt'), 'w') as file_handler:
-
-                file_handler.write("\n".join(str(item) for item in train_custom_data))
-
+                file_handler.write("\n".join(str(item) for item in train_tv_monitor))
 
         with open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'val_split_1.txt'), 'w') as file_handler:
@@ -223,15 +183,7 @@ def separa(train_data_loader, val_data_loader):
         with open(os.path.join(root, 'VOC2012',
                             'ImageSets', 'Segmentation', 'val_split_2.txt'), 'w') as file_handler:
 
-                file_handler.write("\n".join(str(item) for item in val_animali_data))
-        with open(os.path.join(root, 'VOC2012',
-                            'ImageSets', 'Segmentation', 'val_split_3.txt'), 'w') as file_handler:
-
-                file_handler.write("\n".join(str(item) for item in val_casa_data))
-        with open(os.path.join(root, 'VOC2012',
-                            'ImageSets', 'Segmentation', 'val_split_4.txt'), 'w') as file_handler:
-
-                file_handler.write("\n".join(str(item) for item in val_custom_data))           
+                file_handler.write("\n".join(str(item) for item in val_tv_monitor))
 
 
 def main(config):                                                       #il config sarebbe il parser con tanti argomenti dei comandi
@@ -240,22 +192,19 @@ def main(config):                                                       #il conf
     make_dir(config.model_save_path+"/model_default")                                    #crea cartella del modello
     make_dir(config.model_save_path+"/models_split1") 
     make_dir(config.model_save_path+"/models_split2") 
-    make_dir(config.model_save_path+"/models_split3") 
 
     make_dir(config.sorted_save_path)
     make_dir(config.sample_save_path+"/samples_default")                                   #crea cartella del sample
     make_dir(config.sample_save_path+"/samples_split1")
     make_dir(config.sample_save_path+"/samples_split2")
-    make_dir(config.sample_save_path+"/samples_split3")
     for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
         make_dir(os.path.join(config.sample_save_path+"/samples_default", folder))         #crea le cartelle in questione
     for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
         make_dir(os.path.join(config.sample_save_path+"/samples_split1", folder)) 
     for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
-        make_dir(os.path.join(config.sample_save_path+"/samples_split1", folder)) 
-    for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
-        make_dir(os.path.join(config.sample_save_path+"/samples_split1", folder))     
-    for folder in ["mezzi","animali","casa","random"]:                #tra i vari folders delle foto
+        make_dir(os.path.join(config.sample_save_path+"/samples_split2", folder)) 
+    
+    for folder in ["noDivani","tutto"]:                #tra i vari folders delle foto
         make_dir(os.path.join(config.sorted_save_path, folder))
     if config.mode == 'train':
         if config.step == 'default':   
@@ -267,9 +216,7 @@ def main(config):                                                       #il conf
         if config.step == 'split_2': 
                 config.train_list = "train_split_2.txt"
                 config.val_list = "val_split_2.txt"
-        if config.step == 'split_3': 
-                config.train_list = "train_split_3.txt"
-                config.val_list = "val_split_3.txt"
+        
         train_data_loader_1, val_data_loader_1= get_loader(config)         #associa ai due dataset i valori. presi dal config
         trainer_1 = Trainer(train_data_loader=train_data_loader_1,          #fa partire il training, passando i due dataset
                             val_data_loader=val_data_loader_1,
@@ -288,7 +235,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()                                  #libreria di linea di comando da string ad oggetti di python
 
                                                                         #add_argument semplicemente popola il parser
-    parser.add_argument('--step', type=str, default='split_1', choices=['split_1', 'split_2','split_3','default'])
+    parser.add_argument('--step', type=str, default='split_1', choices=['split_1', 'split_2','default'])
     parser.add_argument('--mode', type=str, default='train', choices=['train', "split_dataset"])
     parser.add_argument('--model', type=str, default='unet', choices=['unet', 'fcn8', 'pspnet_avg', 'pspnet_max', 'dfnet'])
     parser.add_argument('--dataset', type=str, default='voc', choices=['voc'])

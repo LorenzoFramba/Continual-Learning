@@ -119,7 +119,7 @@ def make_path(root, train_list, val_list):                #prende le imagini e l
 
 class VOC(data.Dataset):
     def __init__(self, root, image_size, dataset_type, transform=None,
-                 target_transform=to_mask, train_list="train_split_1", val_list="val_split_1"):# train_list="train.txt", val_list="train.txt"):
+                 target_transform=to_mask, train_list="train.txt", val_list="val.txt"):# train_list="train.txt", val_list="train.txt"):
         """
         root - parent of data file
         dataset_type - ['train', 'val']
