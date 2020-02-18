@@ -62,17 +62,9 @@ def to_mask(x):
     output : (None, H, W) - Label value
     """
     np_x = np.array(x)
-    H, W, C = np_x.shape
-    flatten_np_x = np_x.reshape(-1, C)
-    empty = np.zeros_like(flatten_np_x)[:, 0]
-    for i, it in enumerate(flatten_np_x):
-        # Remove void part as background
-        if list(it) == [224, 224, 192]:
-            empty[i] = 0
-        else:
-            empty[i] = palette.index(list(it))
-
-    mask = empty.reshape(H, W, 1).transpose(2, 0, 1)
+    H, W = np_x.shape
+    np_x[np_x==255] = 0
+    mask = np_x.reshape(H, W, 1).transpose(2, 0, 1)
     return torch.from_numpy(mask).squeeze().long()
 
 def to_rgb(xs):
@@ -139,7 +131,7 @@ class VOC(data.Dataset):
             name = self.val_items[i]
 
         image = Image.open(name[0]).convert('RGB')  #image
-        mask = Image.open(name[1]).convert('RGB')
+        mask = Image.open(name[1])
 
         if self.transform:
             image = self.transform(image)

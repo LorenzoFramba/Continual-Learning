@@ -4,7 +4,6 @@ import torch.nn as nn
 import torchvision as tv
 from torchvision import transforms
 from models import unet
-from datasets.voc import to_rgb
 import torch.backends.cudnn as cudnn
 from torch.optim.lr_scheduler import LambdaLR
 import matplotlib.pyplot as plt
@@ -132,17 +131,17 @@ class Trainer:
                                 betas=[self.cfg.beta1, self.cfg.beta2])                 #le due Beta, cioe' la probabilita' di accettare l'ipotesi quando e' falsa  (coefficients used for computing running averages of gradient and its square )
         lr_lambda = lambda n_iter: (1 - n_iter/self.cfg.n_iters)**self.cfg.lr_exp       #ATTENZIONE: learning rate LAMBDA penso
         self.scheduler = LambdaLR(self.optim, lr_lambda=lr_lambda)
-        self.c_loss = nn.CrossEntropyLoss().to(self.device)                             # ignore_index=-1 crossEntropy ! muove il modello nella GPU
+        self.c_loss = nn.CrossEntropyLoss()                             # ignore_index=-1 crossEntropy ! muove il modello nella GPU
         self.softmax = nn.Softmax(dim=1).to(self.device)                                # channel-wise softmax             #facciamo il softmax, cioe' prendiamo tutte le probabilita' e facciamo in modo che la loro somma sia 1
 
         self.n_gpu = torch.cuda.device_count()                                          #ritorna il numero di GPU a disposizione
         if self.cfg.continue_train:
             self.load_network(self.model, "UNET_VOC", self.cfg.which_epoch,
                               self.start_epoch, self.optim, self.scheduler)
-        if self.n_gpu > 1:
+        if self.n_gpu > 0:
             print('Use data parallel model(# gpu: {})'.format(self.n_gpu))
+            self.model.cuda()
             self.model = nn.DataParallel(self.model)                                    #implementa il parallelismo, se disponibile
-        self.model = self.model.to(self.device)
         if self.n_gpu > 0:
             torch.backends.cudnn.benchmark = True
             for state in self.optim.state.values():
