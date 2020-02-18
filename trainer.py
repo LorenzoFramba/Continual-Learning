@@ -215,11 +215,11 @@ class Trainer:
                     confusion_matrix = mt.class_accuracy(output_label,
                                                          labels,
                                                          class_acc_meter_mb.get_confusion_matrix(),
-                                                         labels=range(0,22))
+                                                         labels=range(0,21))
                     confusion_matrix_epoch = mt.class_accuracy(output_label,
                                                          labels,
                                                          class_acc_meter_epoch.get_confusion_matrix(),
-                                                               labels=range(0,22))
+                                                               labels=range(0,21))
                     acc_meter_epoch.update(acc, pix)
                     intersection_meter_epoch.update(intersection)
                     union_meter_epoch.update(union)
@@ -271,7 +271,7 @@ class Trainer:
                     confusion_matrix_epoch = mt.class_accuracy(
                         output_label,
                         labels,
-                        class_acc_meter_epoch.get_confusion_matrix(), labels=range(0,22))
+                        class_acc_meter_epoch.get_confusion_matrix(), labels=range(0,21))
                     class_acc_meter_epoch.update_confusion_matrix(
                         confusion_matrix_epoch)
 
@@ -365,7 +365,7 @@ class Trainer:
                 prediction,
                 labels,
                 class_acc_meter_test.get_confusion_matrix(),
-                labels=range(0,22))
+                labels=range(0,21))
             class_acc_meter_test.update_confusion_matrix(
                 confusion_matrix_epoch)
 
