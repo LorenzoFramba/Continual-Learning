@@ -3,6 +3,7 @@ from torch import optim
 import torch.nn as nn
 import torchvision as tv
 from torchvision import transforms
+from utils import tensor2label
 from models import unet
 import torch.backends.cudnn as cudnn
 from torch.optim.lr_scheduler import LambdaLR
@@ -203,18 +204,18 @@ class Trainer:
                     running_loss += curr_loss                                       #average, DO NOT multiply by the batch size
                     output_label = torch.argmax(self.softmax(outputs), dim=1)       #argmax
                     
-                    acc, pix = mt.accuracy(output_label.cpu(), labels.cpu())
+                    acc, pix = mt.accuracy(output_label, labels)
                     intersection, union =\
                         mt.intersectionAndUnion(output_label.cpu(), labels.cpu(),
                                                                21)
                     acc_meter_mb.update(acc, pix)
                     intersection_meter_mb.update(intersection)
                     union_meter_mb.update(union)
-                    confusion_matrix = mt.class_accuracy(output_label.cpu(),
-                                                         labels.cpu(),
+                    confusion_matrix = mt.class_accuracy(output_label,
+                                                         labels,
                                                          class_acc_meter_mb.get_confusion_matrix())
-                    confusion_matrix_epoch = mt.class_accuracy(output_label.cpu(),
-                                                         labels.cpu(),
+                    confusion_matrix_epoch = mt.class_accuracy(output_label,
+                                                         labels,
                                                          class_acc_meter_epoch.get_confusion_matrix())
                     acc_meter_epoch.update(acc, pix)
                     intersection_meter_epoch.update(intersection)
@@ -230,8 +231,8 @@ class Trainer:
                     elif self.cfg.step == 'default':
                         path=self.cfg.sample_save_path +"/samples_default"
 
-                    tv.utils.save_image(to_rgb(output_label.cpu()),os.path.join(path,"generated",f"predicted_{epoch}_{I}.jpg")) 
-                    tv.utils.save_image(to_rgb(labels.cpu()),os.path.join(path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))  
+                    tv.utils.save_image(tensor2label(output_label, 22),os.path.join(path,"generated",f"predicted_{epoch}_{I}.jpg"))
+                    tv.utils.save_image(tensor2label(labels, 22),os.path.join(path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"))
                     tv.utils.save_image(inputs.cpu(),os.path.join(path,"inputs",f"input_{epoch}_{I}.jpg"),normalize=True, range=(-1,1))  
 
                     seconds = time.time() - start_mini_batch        
@@ -263,8 +264,8 @@ class Trainer:
                     intersection_meter_epoch.update(intersection)
                     union_meter_epoch.update(union)
                     confusion_matrix_epoch = mt.class_accuracy(
-                        output_label.cpu(),
-                        labels.cpu(),
+                        output_label,
+                        labels,
                         class_acc_meter_epoch.get_confusion_matrix())
                     class_acc_meter_epoch.update_confusion_matrix(
                         confusion_matrix_epoch)
@@ -356,8 +357,8 @@ class Trainer:
             intersection_meter_test.update(intersection)
             union_meter_test.update(union)
             confusion_matrix_epoch = mt.class_accuracy(
-                prediction.cpu(),
-                labels.cpu(),
+                prediction,
+                labels,
                 class_acc_meter_test.get_confusion_matrix())
             class_acc_meter_test.update_confusion_matrix(
                 confusion_matrix_epoch)
