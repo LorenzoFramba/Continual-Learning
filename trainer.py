@@ -203,20 +203,23 @@ class Trainer:
                     curr_loss = loss.item()                                         #ritorna il valore del tensore 
                     running_loss += curr_loss                                       #average, DO NOT multiply by the batch size
                     output_label = torch.argmax(self.softmax(outputs), dim=1)       #argmax
-                    
+                    output_label = output_label.cpu()
+                    labels = labels.cpu()
                     acc, pix = mt.accuracy(output_label, labels)
                     intersection, union =\
-                        mt.intersectionAndUnion(output_label.cpu(), labels.cpu(),
+                        mt.intersectionAndUnion(output_label, labels,
                                                                21)
                     acc_meter_mb.update(acc, pix)
                     intersection_meter_mb.update(intersection)
                     union_meter_mb.update(union)
                     confusion_matrix = mt.class_accuracy(output_label,
                                                          labels,
-                                                         class_acc_meter_mb.get_confusion_matrix())
+                                                         class_acc_meter_mb.get_confusion_matrix(),
+                                                         labels=range(0,22))
                     confusion_matrix_epoch = mt.class_accuracy(output_label,
                                                          labels,
-                                                         class_acc_meter_epoch.get_confusion_matrix())
+                                                         class_acc_meter_epoch.get_confusion_matrix(),
+                                                               labels=range(0,22))
                     acc_meter_epoch.update(acc, pix)
                     intersection_meter_epoch.update(intersection)
                     union_meter_epoch.update(union)
@@ -255,10 +258,12 @@ class Trainer:
                 else:
                     output_label = torch.argmax(self.softmax(outputs),
                                                 dim=1)  # argmax
-                    acc, pix = mt.accuracy(output_label.cpu(), labels.cpu())
+                    output_label = output_label.cpu()
+                    labels = labels.cpu()
+                    acc, pix = mt.accuracy(output_label, labels)
                     intersection, union = \
-                        mt.intersectionAndUnion(output_label.cpu(),
-                                                labels.cpu(),
+                        mt.intersectionAndUnion(output_label,
+                                                labels,
                                                 21)
                     acc_meter_epoch.update(acc, pix)
                     intersection_meter_epoch.update(intersection)
@@ -266,7 +271,7 @@ class Trainer:
                     confusion_matrix_epoch = mt.class_accuracy(
                         output_label,
                         labels,
-                        class_acc_meter_epoch.get_confusion_matrix())
+                        class_acc_meter_epoch.get_confusion_matrix(), labels=range(0,22))
                     class_acc_meter_epoch.update_confusion_matrix(
                         confusion_matrix_epoch)
 
@@ -359,7 +364,8 @@ class Trainer:
             confusion_matrix_epoch = mt.class_accuracy(
                 prediction,
                 labels,
-                class_acc_meter_test.get_confusion_matrix())
+                class_acc_meter_test.get_confusion_matrix(),
+                labels=range(0,22))
             class_acc_meter_test.update_confusion_matrix(
                 confusion_matrix_epoch)
 
