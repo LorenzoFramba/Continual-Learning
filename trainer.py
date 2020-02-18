@@ -168,7 +168,7 @@ class Trainer:
             intersection_meter_epoch = AverageMeter()
             union_meter_epoch = AverageMeter()
             class_acc_meter_epoch = AverageMeter()
-            class_acc_meter_epoch.initialize(0, 0, 22)
+            class_acc_meter_epoch.initialize(0, 0, 21)
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
             print('-' * 10)
             self.scheduler.step()
@@ -198,7 +198,7 @@ class Trainer:
                     intersection_meter_mb = AverageMeter()
                     union_meter_mb = AverageMeter()
                     class_acc_meter_mb = AverageMeter()
-                    class_acc_meter_mb.initialize(0,0, 22)
+                    class_acc_meter_mb.initialize(0,0, 21)
                     ########### statistics  ###########
                     curr_loss = loss.item()                                         #ritorna il valore del tensore 
                     running_loss += curr_loss                                       #average, DO NOT multiply by the batch size
@@ -207,7 +207,7 @@ class Trainer:
                     acc, pix = mt.accuracy(output_label.cpu(), labels.cpu())
                     intersection, union =\
                         mt.intersectionAndUnion(output_label.cpu(), labels.cpu(),
-                                                               22)
+                                                               21)
                     acc_meter_mb.update(acc, pix)
                     intersection_meter_mb.update(intersection)
                     union_meter_mb.update(union)
@@ -259,7 +259,7 @@ class Trainer:
                     intersection, union = \
                         mt.intersectionAndUnion(output_label.cpu(),
                                                 labels.cpu(),
-                                                22)
+                                                21)
                     acc_meter_epoch.update(acc, pix)
                     intersection_meter_epoch.update(intersection)
                     union_meter_epoch.update(union)
@@ -340,7 +340,7 @@ class Trainer:
         intersection_meter_test = AverageMeter()
         union_meter_test = AverageMeter()
         class_acc_meter_test = AverageMeter()
-        class_acc_meter_test.initialize(0,0, 22)
+        class_acc_meter_test.initialize(0,0, 21)
 
         self.model.eval()
         for i, (images, labels) in enumerate(self.val_data_loader):
@@ -352,7 +352,7 @@ class Trainer:
             acc, pix = mt.accuracy(prediction.cpu(), labels.cpu())
             intersection, union = \
                 mt.intersectionAndUnion(prediction.cpu(), labels.cpu(),
-                                        22)
+                                        21)
             acc_meter_test.update(acc, pix)
             intersection_meter_test.update(intersection)
             union_meter_test.update(union)
