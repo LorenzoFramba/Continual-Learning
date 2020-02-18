@@ -62,6 +62,6 @@ def intersectionAndUnion(imPred, imLab, numClass):
 
 
 def class_accuracy(preds, label, confusion_matrix, labels = range(0,22)):
-    res = cm(label.view(-1),preds.view(-1), labels).torch()
-    confusion_matrix += res
+    res = cm(label.view(-1),preds.view(-1), labels)
+    confusion_matrix += torch.from_numpy(res)
     return confusion_matrix
