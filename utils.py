@@ -42,8 +42,7 @@ def tensor2label(label_tensor, n_label, imtype=np.uint8):
     if label_tensor.size()[0] > 1:
         label_tensor = label_tensor.max(0, keepdim=True)[1]
     label_tensor = Colorize(n_label)(label_tensor)
-    label_numpy = np.transpose(label_tensor.numpy(), (1, 2, 0))
-    return label_numpy.astype(imtype)
+    return label_tensor
 
 
 palette = np.array([(0, 0, 0),
