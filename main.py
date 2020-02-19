@@ -51,7 +51,7 @@ def get_loader(config):
         train_data_loader_1 = DataLoader(train_data_set,                  #crea un dataset con un batch size
                                         batch_size=config.train_batch_size,  # 16 come argomento
                                         shuffle=True,    #METTILO true
-                                        drop_last=True,
+                                        drop_last=False,
                                         num_workers=config.num_workers, pin_memory=True) 
         
         val_data_set = VOC(root=config.path,                            #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
@@ -62,7 +62,7 @@ def get_loader(config):
         val_data_loader_1 = DataLoader(val_data_set,                    #crea un dataset con un batch size
                                 batch_size=config.val_batch_size,  #16 come argomento
                                 shuffle=True,
-                                drop_last=True,
+                                drop_last=False,
                                 num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
 
         
@@ -99,9 +99,8 @@ def separa(train_data_loader, val_data_loader):
                     #casa:  5 9 11 16 18 20
                 for I in range(config.train_batch_size):
 
-                        gt_path, mask_path = train_data_list[a].split("\t")
+                        gt_path, mask_path = train_data_list[a].split(" ")
                         item = (os.path.join(img_path, gt_path), os.path.join(mask_path, mask_path))
-
                         a+=1
                         print("TRAIN ITERAZIONE: ", I, " su ",config.train_batch_size )
                         out = mask[I].numpy().flatten()   
@@ -130,7 +129,7 @@ def separa(train_data_loader, val_data_loader):
                   print("VAL numero", i)
                   for I in range(config.val_batch_size):
                         if(b<1449):
-                                gt_path, mask_path = val_data_list[b].split("\t")
+                                gt_path, mask_path = val_data_list[b].split(" ")
                                 print("numero b: ", b)
                                 out = mask[I].numpy().flatten()   
                                 lista = np.unique(out)
