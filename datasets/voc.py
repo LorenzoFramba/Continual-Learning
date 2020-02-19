@@ -96,11 +96,15 @@ def make_path(root, train_list, val_list):                #prende le imagini e l
                 'ImageSets', 'Segmentation', val_list)).readlines()]  #'train.txt'  -> val.txt ?
 
     for it in train_data_list:
-        item = (os.path.join(img_path, str(it.split(" ")[0])[1:]), os.path.join(mask_path, str(it.split(" ")[1])[1:]))
+        image =str(it.split(" ")[0])[1:]
+        mask = str(it.split(" ")[1])[1:]
+        item = (os.path.join(img_path, image), os.path.join(mask_path, mask))
         train_items.append(item)          #aggiunge elemento in train
 
     for it in val_data_list:
-        item = (os.path.join(img_path, str(it.split(" ")[0])[1:]), os.path.join(mask_path, str(it.split(" ")[1])[1:]))
+        image = str(it.split(" ")[0])[1:]
+        mask = str(it.split(" ")[1])[1:]
+        item = (os.path.join(img_path, image), os.path.join(mask_path, mask))
         val_items.append(item)          #aggiunge elemento in validating
 
     return train_items, val_items       #ritorna i due vettori

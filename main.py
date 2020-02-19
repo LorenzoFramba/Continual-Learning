@@ -20,7 +20,7 @@ def make_dir(dir):
 
 ########### Config Loader ###########
 
-def get_loader(config):
+def get_loader(config, shuffle=True):
         transform = transforms.Compose([                                #unisce varie trasformazioni assieme
                 transforms.Pad(10),                                     #crea un paddig
                 transforms.CenterCrop((config.h_image_size, config.w_image_size)),      #fa crop al centro, ma di quanto??
@@ -50,7 +50,7 @@ def get_loader(config):
                 
         train_data_loader_1 = DataLoader(train_data_set,                  #crea un dataset con un batch size
                                         batch_size=config.train_batch_size,  # 16 come argomento
-                                        shuffle=True,    #METTILO true
+                                        shuffle=shuffle,    #METTILO true
                                         drop_last=False,
                                         num_workers=config.num_workers, pin_memory=True) 
         
@@ -61,7 +61,7 @@ def get_loader(config):
 
         val_data_loader_1 = DataLoader(val_data_set,                    #crea un dataset con un batch size
                                 batch_size=config.val_batch_size,  #16 come argomento
-                                shuffle=True,
+                                shuffle=shuffle,
                                 drop_last=False,
                                 num_workers=config.num_workers, pin_memory=True) # For make samples out of various models, shuffle=False
 
@@ -92,7 +92,7 @@ def separa(train_data_loader, val_data_loader):
                                                  'val.txt')).readlines()]
 
         a = 0
-        for i, (image, mask) in enumerate(iter(train_data_loader)):                
+        for i, (image, mask) in enumerate(iter(train_data_loader)):
                 print("TRAIN numero", i)
                     #mezzi:  1 2 4 6 7 14 19
                     #animali: 3 8 10 12 13 15 17
@@ -222,7 +222,7 @@ def main(config):                                                       #il conf
                 config.train_list = "train_split_2.txt"
                 config.val_list = "val_split_2.txt"
         
-        train_data_loader_1, val_data_loader_1= get_loader(config)         #associa ai due dataset i valori. presi dal config
+        train_data_loader_1, val_data_loader_1= get_loader(config, True)         #associa ai due dataset i valori. presi dal config
         trainer_1 = Trainer(train_data_loader=train_data_loader_1,          #fa partire il training, passando i due dataset
                             val_data_loader=val_data_loader_1,
                             config=config)
@@ -231,7 +231,7 @@ def main(config):                                                       #il conf
         config.train_list = "train_aug.txt"
         config.val_list = "val.txt"
         train_data_loader_1, val_data_loader_1 = get_loader(
-            config)  # associa ai due dataset i valori. presi dal config
+            config, False)  # associa ai due dataset i valori. presi dal config
         separa(train_data_loader_1, val_data_loader_1)                                            #ora che la classe e' stata istanziata, fa partire il training
 
 ########### Config Parameters ###########
