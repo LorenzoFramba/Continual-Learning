@@ -126,7 +126,7 @@ class Trainer:
     ########### model builder ###########
     def build_model(self):
         
-        self.model = unet.UNet(num_classes=20, in_dim=3, conv_dim=64)
+        self.model = unet.UNet(num_classes=21, in_dim=3, conv_dim=64)
         self.optim = optim.Adam(self.model.parameters(),                                #usiamo adam per ottimizzazione stocastica come OPTIM, passangogli i parametri
                                 lr=self.cfg.lr,                                         #settiamo il learning rate
                                 betas=[self.cfg.beta1, self.cfg.beta2])                 #le due Beta, cioe' la probabilita' di accettare l'ipotesi quando e' falsa  (coefficients used for computing running averages of gradient and its square )
