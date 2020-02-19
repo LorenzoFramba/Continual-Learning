@@ -190,16 +190,26 @@ def main(config):                                                       #il conf
     make_dir(config.model_save_path+"/models_split2") 
 
     make_dir(config.sorted_save_path)
-    make_dir(config.sample_save_path+"/samples_default")                                   #crea cartella del sample
-    make_dir(config.sample_save_path+"/samples_split1")
-    make_dir(config.sample_save_path+"/samples_split2")
+    make_dir(config.sample_save_path+"/samples_default_training")
+    make_dir(config.sample_save_path+"/samples_split1_training")
+    make_dir(config.sample_save_path+"/samples_split2_training")
+    make_dir(config.sample_save_path + "/samples_default_testing")
+    make_dir(config.sample_save_path + "/samples_split1_testing")
+    make_dir(config.sample_save_path + "/samples_split2_testing")
+
     for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
-        make_dir(os.path.join(config.sample_save_path+"/samples_default", folder))         #crea le cartelle in questione
+        make_dir(os.path.join(config.sample_save_path+"/samples_default_training", folder))         #crea le cartelle in questione
+        make_dir(
+            os.path.join(config.sample_save_path + "/samples_default_testing", folder))
     for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
-        make_dir(os.path.join(config.sample_save_path+"/samples_split1", folder)) 
+        make_dir(os.path.join(config.sample_save_path+"/samples_split1_training", folder))
+        make_dir(
+            os.path.join(config.sample_save_path + "/samples_split1_testing", folder))
     for folder in ["inputs","ground_truth","generated"]:                #tra i vari folders delle foto
-        make_dir(os.path.join(config.sample_save_path+"/samples_split2", folder)) 
-    
+        make_dir(os.path.join(config.sample_save_path+"/samples_split2_training", folder))
+        make_dir(
+            os.path.join(config.sample_save_path + "/samples_split2_testing", folder))
+
     for folder in ["noDivani","tutto"]:                #tra i vari folders delle foto
         make_dir(os.path.join(config.sorted_save_path, folder))
     if config.mode == 'train':

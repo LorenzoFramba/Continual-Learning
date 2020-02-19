@@ -228,11 +228,11 @@ class Trainer:
 
                     path=self.cfg.sample_save_path    
                     if self.cfg.step == 'split_1':
-                        path=self.cfg.sample_save_path +"/samples_split1"
+                        path=self.cfg.sample_save_path +"/samples_split1_training"
                     elif self.cfg.step == 'split_2':
-                        path=self.cfg.sample_save_path +"/samples_split2"
+                        path=self.cfg.sample_save_path +"/samples_split2_training"
                     elif self.cfg.step == 'default':
-                        path=self.cfg.sample_save_path +"/samples_default"
+                        path=self.cfg.sample_save_path +"/samples_default_training"
 
                     tv.utils.save_image(to_rgb(output_label),os.path.join(path,"generated",f"predicted_{epoch}_{I}.jpg"), padding=100)
                     tv.utils.save_image(to_rgb(labels),os.path.join(path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"), padding=100)
@@ -318,10 +318,14 @@ class Trainer:
                     'Epoch Time : {time_epoch}\t'
                     'Total Time : {time_start}\t'
                     'Test Accuracy  : {test}\t'
+                    'Test Mean IOU : {mean_iou:.4f}\t'
+                    'Test Mean Class Accuracy : {mean_ca:.4f}\t'
                     'Loss Epoch: {loss:.4f}\t'.format(
                     iter=epoch, iters=self.cfg.n_iters,
                     test = test_acc * 100,
                     time_epoch=elapsed, time_start=elapsed_start,
+                    mean_iou=iou.mean(),
+                    mean_ca=class_acc.mean(),
                     loss=running_loss / print_number))
                 print("FINE TESTING")
             epoch +=1
@@ -370,6 +374,25 @@ class Trainer:
                 labels=range(0,21))
             class_acc_meter_test.update_confusion_matrix(
                 confusion_matrix_epoch)
+            path = self.cfg.sample_save_path
+            if self.cfg.step == 'split_1':
+                path = self.cfg.sample_save_path + "/samples_split1_testing"
+            elif self.cfg.step == 'split_2':
+                path = self.cfg.sample_save_path + "/samples_split2_testing"
+            elif self.cfg.step == 'default':
+                path = self.cfg.sample_save_path + "/samples_default_testing"
+
+            tv.utils.save_image(to_rgb(prediction),
+                                os.path.join(path, "generated",
+                                             f"predicted_testing_{i}.jpg"),
+                                padding=100)
+            tv.utils.save_image(to_rgb(labels),
+                                os.path.join(path, "ground_truth",
+                                             f"ground_truth_testing_{i}.jpg"),
+                                padding=100)
+            tv.utils.save_image(images.cpu(), os.path.join(path, "inputs",
+                                                           f"input_testing_{i}.jpg"),
+                                normalize=True, range=(-1, 1), padding=100)
 
         iou = intersection_meter_test.sum / (union_meter_test.sum + 1e-10)
         return acc_meter_test.average(), iou, class_acc_meter_test.confusion_matrix
