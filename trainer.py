@@ -354,9 +354,11 @@ class Trainer:
                 labels = Variable(labels.cuda())
             outputs = self.model(images)
             _, prediction = torch.max(outputs.data, 1)
-            acc, pix = mt.accuracy(prediction.cpu(), labels.cpu())
+            prediction = prediction.cpu()
+            labels = labels.cpu()
+            acc, pix = mt.accuracy(prediction, labels)
             intersection, union = \
-                mt.intersectionAndUnion(prediction.cpu(), labels.cpu(),
+                mt.intersectionAndUnion(prediction, labels,
                                         21)
             acc_meter_test.update(acc, pix)
             intersection_meter_test.update(intersection)
