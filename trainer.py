@@ -192,7 +192,7 @@ class Trainer:
                 loss = self.c_loss(outputs, labels)                                 #cross entropy tra l'output e quello che avremmo dovuto ottenere
                 loss.backward()                                                     #fa il gradiente
                 self.optim.step()                                                   #ottimizza tramite adam
-                if I % 20 == 0:
+                if I % 100 == 0:
                     print_number += 1
                     acc_meter_mb = AverageMeter()
                     intersection_meter_mb = AverageMeter()
