@@ -88,20 +88,20 @@ def make_path(root, train_list, val_list):                #prende le imagini e l
     train_items = []            #vettore per train
     val_items = []              #vettore per validation
 
-    img_path = os.path.join(root, 'VOC2012', 'JPEGImages')
-    mask_path = os.path.join(root, 'VOC2012', 'SegmentationClass')
+    img_path = os.path.join(root, 'VOC2012')
+    mask_path = os.path.join(root, 'VOC2012')
     train_data_list = [l.strip('\n') for l in open(os.path.join(root, 'VOC2012',
                 'ImageSets', 'Segmentation', train_list)).readlines()]
     val_data_list   = [l.strip('\n') for l in open(os.path.join(root, 'VOC2012',
                 'ImageSets', 'Segmentation', val_list)).readlines()]  #'train.txt'  -> val.txt ?
 
     for it in train_data_list:
-        item = (os.path.join(img_path, it + '.jpg'), os.path.join(mask_path, it + '.png'))
+        item = (os.path.join(img_path, it.split("\t")[0]), os.path.join(mask_path, it.split("\t")[0]))
         #print("item",item)
         train_items.append(item)          #aggiunge elemento in train
 
     for it in val_data_list:
-        item = (os.path.join(img_path, it + '.jpg'), os.path.join(mask_path, it + '.png'))
+        item = (os.path.join(img_path, it.split("\t")[0]), os.path.join(mask_path, it.split("\t")[0]))
         val_items.append(item)          #aggiunge elemento in validating
 
 
@@ -111,7 +111,7 @@ def make_path(root, train_list, val_list):                #prende le imagini e l
 
 class VOC(data.Dataset):
     def __init__(self, root, image_size, dataset_type, transform=None,
-                 target_transform=to_mask, train_list="train.txt", val_list="val.txt"):# train_list="train.txt", val_list="train.txt"):
+                 target_transform=to_mask, train_list="train_aug.txt", val_list="val.txt"):# train_list="train.txt", val_list="train.txt"):
         """
         root - parent of data file
         dataset_type - ['train', 'val']

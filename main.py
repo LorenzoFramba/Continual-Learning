@@ -30,7 +30,7 @@ def get_loader(config):
         train_list= ""
         val_list= ""
         if config.step == 'default':   
-                train_list = "train.txt"
+                train_list = "train_aug.txt"
                 val_list = "val.txt"    
         if config.step == 'split_1':   
                 train_list = "train_split_1.txt"
@@ -82,10 +82,10 @@ def separa(train_data_loader, val_data_loader):
         root = config.path
             
 
-        img_path = os.path.join(root, 'VOC2012', 'JPEGImages')
-        mask_path = os.path.join(root, 'VOC2012', 'SegmentationClass')
+        img_path = os.path.join(root, 'VOC2012')
+        mask_path = os.path.join(root, 'VOC2012')
         train_data_list = [l.strip('\n') for l in open(os.path.join(root, 'VOC2012',
-                            'ImageSets', 'Segmentation', 'train.txt')).readlines()]
+                            'ImageSets', 'Segmentation', 'train_aug.txt')).readlines()]
         val_data_list = [l.strip('\n') for l in
                                open(os.path.join(root, 'VOC2012',
                                                  'ImageSets', 'Segmentation',
@@ -99,8 +99,8 @@ def separa(train_data_loader, val_data_loader):
                     #casa:  5 9 11 16 18 20
                 for I in range(config.train_batch_size):
 
-                        nomeFoto = train_data_list[a]
-                        item = (os.path.join(img_path, nomeFoto + '.jpg'), os.path.join(mask_path, nomeFoto + '.png'))
+                        gt_path, mask_path = train_data_list[a].split("\t")
+                        item = (os.path.join(img_path, gt_path), os.path.join(mask_path, mask_path))
 
                         a+=1
                         print("TRAIN ITERAZIONE: ", I, " su ",config.train_batch_size )
@@ -113,12 +113,12 @@ def separa(train_data_loader, val_data_loader):
                         
                         if(quasi_tutto):
                             print("TRAIN NON HA UN MONITOR")
-                            train_mezzi_data.append(nomeFoto)
+                            train_mezzi_data.append(f"{gt_path}\t{mask_path}")
                             #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))              
                         else:
                             print("TRAIN immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
                             train_con_cose_data.append(lista)
-                            train_tv_monitor.append(nomeFoto)
+                            train_tv_monitor.append(f"{gt_path}\t{mask_path}")
                             print(" ed ha ste classi ",train_con_cose_data)
                             train_con_cose_data.clear()
                             
@@ -130,11 +130,11 @@ def separa(train_data_loader, val_data_loader):
                   print("VAL numero", i)
                   for I in range(config.val_batch_size):
                         if(b<1449):
-                                nomeFoto = val_data_list[b]
+                                gt_path, mask_path = val_data_list[b].split("\t")
                                 print("numero b: ", b)
                                 out = mask[I].numpy().flatten()   
                                 lista = np.unique(out)
-                                item = (os.path.join(img_path, nomeFoto + '.jpg'), os.path.join(mask_path, nomeFoto + '.png'))
+                                item = (os.path.join(img_path, gt_path), os.path.join(mask_path, mask_path))
                                 
                                 b+=1
                                 print("VAL ITERAZIONE: ", I, " su ",config.val_batch_size )
@@ -147,12 +147,12 @@ def separa(train_data_loader, val_data_loader):
                         
                         if(quasi_tutto):
                             print("VAL NON HA UN MONITOR")
-                            val_mezzi_data.append(nomeFoto)
+                            val_mezzi_data.append(f"{gt_path}\t{mask_path}")
                             #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))              
                         else:
                             print("VAL immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
                             train_con_cose_data.append(lista)
-                            val_tv_monitor.append(nomeFoto)
+                            val_tv_monitor.append(f"{gt_path}\t{mask_path}")
                             print(" ed ha ste classi ",train_con_cose_data)
                             train_con_cose_data.clear()
                         
@@ -229,7 +229,7 @@ def main(config):                                                       #il conf
                             config=config)
         trainer_1.train_val()
     if config.mode == "split_dataset":
-        config.train_list = "train.txt"
+        config.train_list = "train_aug.txt"
         config.val_list = "val.txt"
         train_data_loader_1, val_data_loader_1 = get_loader(
             config)  # associa ai due dataset i valori. presi dal config
