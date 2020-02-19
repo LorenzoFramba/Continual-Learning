@@ -328,9 +328,9 @@ class Trainer:
 
 
 
-            self.save_network(self.model, "UNET_VOC", "latest", [0], epoch, self.optim, self.scheduler)         #salva l'ultima epoca
+            self.save_network(self.model.module, "UNET_VOC", "latest", [0], epoch, self.optim, self.scheduler)         #salva l'ultima epoca
             if epoch % 10 == 0:
-                self.save_network(self.model, "UNET_VOC", f"{epoch}", [0], epoch,
+                self.save_network(self.model.module, "UNET_VOC", f"{epoch}", [0], epoch,
                                   self.optim, self.scheduler)
 
         time_elapsed = time.time() - since
