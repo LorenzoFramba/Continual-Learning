@@ -112,12 +112,12 @@ def separa(train_data_loader, val_data_loader):
                         
                         if(quasi_tutto):
                             print("TRAIN NON HA UN MONITOR")
-                            train_mezzi_data.append(f"{gt_path}\t{mask_path}")
+                            train_mezzi_data.append(f"{gt_path} {mask_path}")
                             #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))              
                         else:
                             print("TRAIN immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
                             train_con_cose_data.append(lista)
-                            train_tv_monitor.append(f"{gt_path}\t{mask_path}")
+                            train_tv_monitor.append(f"{gt_path} {mask_path}")
                             print(" ed ha ste classi ",train_con_cose_data)
                             train_con_cose_data.clear()
                             
@@ -146,12 +146,12 @@ def separa(train_data_loader, val_data_loader):
                         
                         if(quasi_tutto):
                             print("VAL NON HA UN MONITOR")
-                            val_mezzi_data.append(f"{gt_path}\t{mask_path}")
+                            val_mezzi_data.append(f"{gt_path} {mask_path}")
                             #tv.utils.save_image(image,os.path.join(config.sorted_save_path,"mezzi",f"input_{i}_{I}.jpg"),normalize=True, range=(-1,1))              
                         else:
                             print("VAL immagine",I," in batch ", i ," non appartiene a nessun gruppo")  
                             train_con_cose_data.append(lista)
-                            val_tv_monitor.append(f"{gt_path}\t{mask_path}")
+                            val_tv_monitor.append(f"{gt_path} {mask_path}")
                             print(" ed ha ste classi ",train_con_cose_data)
                             train_con_cose_data.clear()
                         
