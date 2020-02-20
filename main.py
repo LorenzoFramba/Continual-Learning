@@ -248,6 +248,7 @@ if __name__ == '__main__':
 
     # Training setting
     parser.add_argument('--n_iters', type=int, default=10000)
+    parser.add_argument('--n_iters_decay', type=int, default=10000)
     parser.add_argument('--train_batch_size', type=int, default=2)
     parser.add_argument('--val_batch_size', type=int, default=2)
     parser.add_argument('--lr', type=float, default=1e-4)               #learning rate
@@ -268,6 +269,8 @@ if __name__ == '__main__':
     # Logging setting
     parser.add_argument('--log_step', type=int, default=1)
     parser.add_argument('--val_step', type=int, default=1000)
+    parser.add_argument('--test_step', type=int, default=50)
+
     parser.add_argument('--model_save_step', type=int, default=10, help='Saving epoch')
     parser.add_argument('--sample_save_step', type=int, default=10, help='Saving epoch')
     parser.add_argument('--continue_train', action='store_true',

@@ -44,6 +44,7 @@ class Trainer:
         self.val_data_loader = val_data_loader                                          #associa il dataset val
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.start_epoch = 0
+        self.old_lr = self.cfg.lr
         self.build_model()                                                              #crea il modello
 
     def imshow(self, img):
@@ -127,22 +128,24 @@ class Trainer:
     def build_model(self):
         
         self.model = unet.UNet(num_classes=21, in_dim=3, conv_dim=64)
-        self.optim = optim.Adam(self.model.parameters(),                                #usiamo adam per ottimizzazione stocastica come OPTIM, passangogli i parametri
-                                lr=self.cfg.lr,                                         #settiamo il learning rate
-                                betas=[self.cfg.beta1, self.cfg.beta2])                 #le due Beta, cioe' la probabilita' di accettare l'ipotesi quando e' falsa  (coefficients used for computing running averages of gradient and its square )
-        lr_lambda = lambda n_iter: (1 - n_iter/self.cfg.n_iters)**self.cfg.lr_exp       #ATTENZIONE: learning rate LAMBDA penso
-        self.scheduler = LambdaLR(self.optim, lr_lambda=lr_lambda)
-        self.c_loss = nn.CrossEntropyLoss()                             # ignore_index=-1 crossEntropy ! muove il modello nella GPU
-        self.softmax = nn.Softmax(dim=1).to(self.device)                                # channel-wise softmax             #facciamo il softmax, cioe' prendiamo tutte le probabilita' e facciamo in modo che la loro somma sia 1
+        self.optim = optim.Adam(self.model.parameters(),
+                                lr=self.cfg.lr,
+                                betas=[self.cfg.beta1, self.cfg.beta2])
+        self.c_loss = nn.CrossEntropyLoss()
+        self.softmax = nn.Softmax(dim=1).to(self.device)
 
-        self.n_gpu = torch.cuda.device_count()                                          #ritorna il numero di GPU a disposizione
+        self.n_gpu = torch.cuda.device_count()
         if self.cfg.continue_train:
             self.load_network(self.model, "UNET_VOC", self.cfg.which_epoch,
                               self.start_epoch, self.optim, self.scheduler)
         if self.n_gpu > 0:
+            from apex import amp
             print('Use data parallel model(# gpu: {})'.format(self.n_gpu))
             self.model.cuda()
-            self.model = nn.DataParallel(self.model)                                    #implementa il parallelismo, se disponibile
+            model, self.optim = amp.initialize(self.model,
+                                                 self.optim, opt_level='O1')
+            self.model = nn.DataParallel(self.model)
+
         if self.n_gpu > 0:
             torch.backends.cudnn.benchmark = True
             for state in self.optim.state.values():
@@ -159,11 +162,11 @@ class Trainer:
         print(self.start_epoch)
 
         print(f"batch size {self.cfg.train_batch_size} dataset size : [{len(self.train_data_loader.dataset)}]"
-              f" epoch : [{self.cfg.n_iters}]"
+              f" epoch : [{self.cfg.n_iters + self.cfg.n_iters_decay}]"
               f" iterations per epoch: {iters_per_epoch}")
 
         ########### train until model is fully trained  ###########
-        while epoch < self.cfg.n_iters:
+        while epoch < self.cfg.n_iters + self.cfg.n_iters_decay:
             acc_meter_epoch = AverageMeter()
             intersection_meter_epoch = AverageMeter()
             union_meter_epoch = AverageMeter()
@@ -274,7 +277,11 @@ class Trainer:
                         class_acc_meter_epoch.get_confusion_matrix(), labels=range(0,21))
                     class_acc_meter_epoch.update_confusion_matrix(
                         confusion_matrix_epoch)
-
+            if epoch > self.cfg.n_iters:
+                if self.n_gpu > 0:
+                    self.update_learning_rate()
+                else:
+                    self.update_learning_rate()
             ########### one epoch done  ###########                   
             if (epoch + 1) % self.cfg.log_step == 0:
                 seconds = time.time() - start_epoch        
@@ -301,7 +308,7 @@ class Trainer:
                     loss=running_loss / print_number))
 
             ########### eval phase  ###########
-            if (epoch + 1) % 300 == 0:
+            if (epoch + 1) % self.cfg.test_step == 0:
                 print("TESTING")
                 test_acc, iou, confusion_matrix = self.test()
                 seconds = time.time() - start_epoch                                 #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
@@ -396,3 +403,10 @@ class Trainer:
 
         iou = intersection_meter_test.sum / (union_meter_test.sum + 1e-10)
         return acc_meter_test.average(), iou, class_acc_meter_test.confusion_matrix
+
+    def update_learning_rate(self):
+        lrd = self.cfg.lr / self.cfg.n_iters_decay
+        lr = self.old_lr - lrd
+        for param_group in self.optim.param_groups:
+            param_group['lr'] = lr
+        self.old_lr = lr
