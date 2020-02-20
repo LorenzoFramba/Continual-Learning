@@ -136,11 +136,8 @@ class Trainer:
             self.load_network(self.model, "UNET_VOC", self.cfg.which_epoch,
                               self.start_epoch, self.optim)
         if self.n_gpu > 0:
-            from apex import amp
             print('Use data parallel model(# gpu: {})'.format(self.n_gpu))
             self.model.cuda()
-            model, self.optim = amp.initialize(self.model,
-                                                 self.optim, opt_level='O1')
             self.model = nn.DataParallel(self.model)
 
         if self.n_gpu > 0:
