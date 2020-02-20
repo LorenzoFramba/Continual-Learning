@@ -164,11 +164,6 @@ class Trainer:
 
         ########### train until model is fully trained  ###########
         while epoch < self.cfg.n_iters + self.cfg.n_iters_decay:
-            acc_meter_epoch = AverageMeter()
-            intersection_meter_epoch = AverageMeter()
-            union_meter_epoch = AverageMeter()
-            class_acc_meter_epoch = AverageMeter()
-            class_acc_meter_epoch.initialize(0, 0, 21)
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters + self.cfg.n_iters_decay))
             print('-' * 10)
             running_loss = 0.0
@@ -215,14 +210,6 @@ class Trainer:
                                                          labels,
                                                          class_acc_meter_mb.get_confusion_matrix(),
                                                          labels=range(0,21))
-                    confusion_matrix_epoch = mt.class_accuracy(output_label,
-                                                         labels,
-                                                         class_acc_meter_epoch.get_confusion_matrix(),
-                                                               labels=range(0,21))
-                    acc_meter_epoch.update(acc, pix)
-                    intersection_meter_epoch.update(intersection)
-                    union_meter_epoch.update(union)
-                    class_acc_meter_epoch.update_confusion_matrix(confusion_matrix_epoch)
                     ########### printing out the model ###########
 
                     path=self.cfg.sample_save_path    
@@ -254,25 +241,6 @@ class Trainer:
                                 acc = acc_meter_mb.average()*100,
                                 iter=epoch, iters=self.cfg.n_iters + self.cfg.n_iters_decay, mean=iou.mean(),
                                 time=elapsed, loss=curr_loss))
-                else:
-                    output_label = torch.argmax(self.softmax(outputs),
-                                                dim=1)  # argmax
-                    output_label = output_label.cpu()
-                    labels = labels.cpu()
-                    acc, pix = mt.accuracy(output_label, labels)
-                    intersection, union = \
-                        mt.intersectionAndUnion(output_label,
-                                                labels,
-                                                21)
-                    acc_meter_epoch.update(acc, pix)
-                    intersection_meter_epoch.update(intersection)
-                    union_meter_epoch.update(union)
-                    confusion_matrix_epoch = mt.class_accuracy(
-                        output_label,
-                        labels,
-                        class_acc_meter_epoch.get_confusion_matrix(), labels=range(0,21))
-                    class_acc_meter_epoch.update_confusion_matrix(
-                        confusion_matrix_epoch)
             if epoch > self.cfg.n_iters:
                 if self.n_gpu > 0:
                     self.update_learning_rate()
@@ -284,24 +252,11 @@ class Trainer:
                 elapsed = str(timedelta(seconds=seconds))
                 seconds_from_beginning = time.time() - since
                 elapsed_start = str(timedelta(seconds=seconds_from_beginning))
-                iou = intersection_meter_epoch.sum / (union_meter_epoch.sum + 1e-10)
-                classes_acc = class_acc_meter_epoch.confusion_matrix.diag() / (
-                            class_acc_meter_epoch.confusion_matrix.sum(1) + 1e-10) * 100
-                for i, class_acc in enumerate(classes_acc):
-                    print('class [{}], Mean acc: {:.4f}'.format(i, class_acc))
-                for i, _iou in enumerate(iou):
-                    print('class [{}], IoU: {:.4f}'.format(i, _iou))
                 print('Iteration : [{iter}/{iters}]\t'
                     'Epoch Time : {time_epoch}\t'
-                    'Total Time : {time_start}\t'
-                    'Accuracy Epoch : {acc}\t'
-                      'Mean IOU : {mean:.4f}\t'
-                    'Loss Epoch: {loss:.4f}\t'.format(
+                    'Total Time : {time_start}\t'.format(
                     iter=epoch, iters=self.cfg.n_iters,
-                    time_epoch=elapsed, time_start=elapsed_start,
-                    acc =acc_meter_epoch.average()*100,
-                    mean=iou.mean(),
-                    loss=running_loss / print_number))
+                    time_epoch=elapsed, time_start=elapsed_start))
 
             ########### eval phase  ###########
             if (epoch + 1) % self.cfg.test_step == 0:
