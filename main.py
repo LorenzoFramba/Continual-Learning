@@ -251,8 +251,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_iters_decay', type=int, default=10000)
     parser.add_argument('--train_batch_size', type=int, default=2)
     parser.add_argument('--val_batch_size', type=int, default=2)
-    parser.add_argument('--lr', type=float, default=1e-4)               #learning rate
-    parser.add_argument('--lr_exp', type=float, default=0.9)
+    parser.add_argument('--lr', type=float, default=0.0002)
     parser.add_argument('--beta1', type=float, default=5e-1)            #the probability of of accepting the null hypothesis when it’s false.
     parser.add_argument('--beta2', type=float, default=0.99)            #the probability of of accepting the null hypothesis when it’s false.
     parser.add_argument('--h_image_size', type=int, default=512)
