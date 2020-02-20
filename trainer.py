@@ -6,7 +6,6 @@ from torchvision import transforms
 from datasets.voc import to_rgb
 from models import unet
 import torch.backends.cudnn as cudnn
-from torch.optim.lr_scheduler import LambdaLR
 import matplotlib.pyplot as plt
 from utils import AverageMeter
 import numpy as np
@@ -69,7 +68,7 @@ class Trainer:
     
     ########### helper saving function that can be used by subclasses ###########
     def save_network(self, network, network_label, epoch_label, gpu_ids,
-                     epoch, optimizer, scheduler):
+                     epoch, optimizer):
 
 
         if self.cfg.step == 'split_1':
@@ -85,8 +84,7 @@ class Trainer:
         state = {
             "epoch": epoch + 1,
             "model_state": network.cpu().state_dict(),                                  #passa un dizionario che contiene lo stato e tutti i parametri
-            "optimizer_state": optimizer.state_dict(),
-            "scheduler_state": scheduler.state_dict()
+            "optimizer_state": optimizer.state_dict()
         }
         torch.save(state, save_path)                                                    #salviamo lo stato nel path
         if len(gpu_ids) and torch.cuda.is_available():
@@ -94,7 +92,7 @@ class Trainer:
 
     ########### helper loading function that can be used by subclasses ###########
     def load_network(self, network, network_label, epoch_label,
-                     epoch, optimizer, scheduler, save_dir=''):
+                     epoch, optimizer, save_dir=''):
         
         
 
@@ -119,7 +117,6 @@ class Trainer:
                 network.load_state_dict(checkpoint["model_state"])                      #gli passiamo lo stato con i parametri
                 self.start_epoch = checkpoint["epoch"]
                 optimizer.load_state_dict(checkpoint["optimizer_state"])
-                scheduler.load_state_dict(checkpoint["scheduler_state"])
                 print("Load model Done!")
             except:
                 print("Error during the load of the model")                             #non viene importato
@@ -137,7 +134,7 @@ class Trainer:
         self.n_gpu = torch.cuda.device_count()
         if self.cfg.continue_train:
             self.load_network(self.model, "UNET_VOC", self.cfg.which_epoch,
-                              self.start_epoch, self.optim, self.scheduler)
+                              self.start_epoch, self.optim)
         if self.n_gpu > 0:
             from apex import amp
             print('Use data parallel model(# gpu: {})'.format(self.n_gpu))
@@ -174,7 +171,6 @@ class Trainer:
             class_acc_meter_epoch.initialize(0, 0, 21)
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
             print('-' * 10)
-            self.scheduler.step()
             running_loss = 0.0
             pixel_accuracy_epoch=0.0
             start_epoch = time.time()
@@ -339,10 +335,10 @@ class Trainer:
 
 
 
-            self.save_network(self.model.module, "UNET_VOC", "latest", [0], epoch, self.optim, self.scheduler)         #salva l'ultima epoca
+            self.save_network(self.model.module, "UNET_VOC", "latest", [0], epoch, self.optim)
             if epoch % 10 == 0:
                 self.save_network(self.model.module, "UNET_VOC", f"{epoch}", [0], epoch,
-                                  self.optim, self.scheduler)
+                                  self.optim)
 
         time_elapsed = time.time() - since
         print('Training complete in {:.0f}m {:.0f}s'.format(
