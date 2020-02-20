@@ -169,7 +169,7 @@ class Trainer:
             union_meter_epoch = AverageMeter()
             class_acc_meter_epoch = AverageMeter()
             class_acc_meter_epoch.initialize(0, 0, 21)
-            print('Epoch {}/{}'.format(epoch, self.cfg.n_iters))
+            print('Epoch {}/{}'.format(epoch, self.cfg.n_iters + self.cfg.n_iters_decay))
             print('-' * 10)
             running_loss = 0.0
             pixel_accuracy_epoch=0.0
@@ -252,7 +252,7 @@ class Trainer:
                                 'Mean IOU : {mean:.4f}\t'
                                 'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch,
                                 acc = acc_meter_mb.average()*100,
-                                iter=epoch, iters=self.cfg.n_iters, mean=iou.mean(),
+                                iter=epoch, iters=self.cfg.n_iters + self.cfg.n_iters_decay, mean=iou.mean(),
                                 time=elapsed, loss=curr_loss))
                 else:
                     output_label = torch.argmax(self.softmax(outputs),
@@ -324,7 +324,7 @@ class Trainer:
                     'Test Mean IOU : {mean_iou:.4f}\t'
                     'Test Mean Class Accuracy : {mean_ca:.4f}\t'
                     'Loss Epoch: {loss:.4f}\t'.format(
-                    iter=epoch, iters=self.cfg.n_iters,
+                    iter=epoch, iters=self.cfg.n_iters + self.cfg.n_iters_decay,
                     test = test_acc * 100,
                     time_epoch=elapsed, time_start=elapsed_start,
                     mean_iou=iou.mean(),
