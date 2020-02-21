@@ -91,8 +91,7 @@ class Trainer:
             network.cuda()
 
     ########### helper loading function that can be used by subclasses ###########
-    def load_network(self, network, network_label, epoch_label,
-                     epoch, optimizer, save_dir=''):
+    def load_network(self, network, network_label, epoch_label, load_optim):
         
         
 
@@ -104,9 +103,13 @@ class Trainer:
             path = self.cfg.model_save_path+"/model_default"
 
 
-        save_filename = '%s_net_%s.pth' % (epoch_label, network_label)  
+        save_filename = '%s_net_%s.pth' % (epoch_label, network_label)
+        if not load_optim:
+            path = self.cfg.model_save_path+"/models_split1"
+
         save_dir = path
         save_path = os.path.join(save_dir, save_filename)
+
         if not os.path.isfile(save_path):                                               #se non si trova nel path
             print('%s not exists yet!' % save_path)                                     #diciamo che non esiste! 
             if network_label == 'G':
@@ -115,8 +118,9 @@ class Trainer:
             try:
                 checkpoint = torch.load(save_path)                                      #checkpoint sarebbe una struttura ( tipo struct ?? )
                 network.load_state_dict(checkpoint["model_state"])                      #gli passiamo lo stato con i parametri
-                self.start_epoch = checkpoint["epoch"]
-                optimizer.load_state_dict(checkpoint["optimizer_state"])
+                if load_optim:
+                    self.start_epoch = checkpoint["epoch"]
+                    self.optim.load_state_dict(checkpoint["optimizer_state"])
                 print("Load model Done!")
             except:
                 print("Error during the load of the model")                             #non viene importato
@@ -129,12 +133,13 @@ class Trainer:
                                 lr=self.cfg.lr,
                                 betas=[self.cfg.beta1, self.cfg.beta2])
         self.c_loss = nn.CrossEntropyLoss()
+        self.distillation_loss = nn.KLDivLoss(reduction="none")
         self.softmax = nn.Softmax(dim=1).to(self.device)
+        self.log_softmax = nn.LogSoftmax(dim=1).to(self.device)
 
         self.n_gpu = torch.cuda.device_count()
         if self.cfg.continue_train:
-            self.load_network(self.model, "UNET_VOC", self.cfg.which_epoch,
-                              self.start_epoch, self.optim)
+            self.load_network(self.model, "UNET_VOC", self.cfg.which_epoch, True)
         if self.n_gpu > 0:
             print('Use data parallel model(# gpu: {})'.format(self.n_gpu))
             self.model.cuda()
@@ -146,6 +151,23 @@ class Trainer:
                 for k, v in state.items():
                     if torch.is_tensor(v):
                         state[k] = v.cuda()
+
+        if self.cfg.step == "split_2":
+            self.mask =\
+                torch.from_numpy(
+                    np.array(
+                        [True if i < self.cfg.from_new_class else False for i in range(0,21)] * self.cfg.train_batch_size * 1 * self.cfg.h_image_size * self.cfg.w_image_size)).view(self.cfg.train_batch_size, -1, self.cfg.h_image_size, self.cfg.w_image_size)
+
+            self.old_model = unet.UNet(num_classes=21, in_dim=3, conv_dim=64)
+
+            self.load_network(self.old_model, "UNET_VOC", "latest", False)
+            if self.n_gpu > 0:
+                print('Use data parallel model(# gpu: {})'.format(self.n_gpu))
+                self.old_model.cuda()
+                self.old_model = nn.DataParallel(self.old_model)
+                for param in self.old_model.parameters():
+                    param.requires_grad = False
+
 
     ########### trainer phase ###########
     def train_val(self):
@@ -179,10 +201,19 @@ class Trainer:
                 
 
                 outputs = self.model(inputs)     
-                self.reset_grad()                                                   #resettiamo i  gradienti
-                loss = self.c_loss(outputs, labels)                                 #cross entropy tra l'output e quello che avremmo dovuto ottenere
-                loss.backward()                                                     #fa il gradiente
-                self.optim.step()                                                   #ottimizza tramite adam
+                self.reset_grad()
+                loss = self.c_loss(outputs, labels)
+                loss_distillation = 0
+                if self.cfg.lambda_distillation != 0.0:
+                    outputs_old = self.old_model(inputs)
+                    loss_distillation = self.distillation_loss(self.log_softmax(outputs), self.softmax(outputs_old))
+                    loss_distillation = loss_distillation[self.mask]
+                    loss_distillation = loss_distillation.mean()
+
+
+                loss = loss + (self.cfg.lambda_distillation * loss_distillation)
+                loss.backward()
+                self.optim.step()
                 if I % 100 == 0:
                     print_number += 1
                     acc_meter_mb = AverageMeter()
@@ -191,7 +222,7 @@ class Trainer:
                     class_acc_meter_mb = AverageMeter()
                     class_acc_meter_mb.initialize(0,0, 21)
                     ########### statistics  ###########
-                    curr_loss = loss.item()                                         #ritorna il valore del tensore 
+                    curr_loss = loss.item()                                         #ritorna il valore del tensore
                     running_loss += curr_loss                                       #average, DO NOT multiply by the batch size
                     output_label = torch.argmax(self.softmax(outputs), dim=1)       #argmax
                     output_label = output_label.cpu()

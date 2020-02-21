@@ -37,7 +37,7 @@ def get_loader(config, shuffle=True):
                 val_list = "val_split_1.txt"
         if config.step == 'split_2': 
                 train_list = "train_split_2.txt"
-                val_list = "val_split_2.txt"
+                val_list = "val.txt"
         if config.step == 'split_3': 
                 train_list = "train_split_3.txt"
                 val_list = "val_split_3.txt"
@@ -51,7 +51,7 @@ def get_loader(config, shuffle=True):
         train_data_loader_1 = DataLoader(train_data_set,                  #crea un dataset con un batch size
                                         batch_size=config.train_batch_size,  # 16 come argomento
                                         shuffle=shuffle,    #METTILO true
-                                        drop_last=False,
+                                        drop_last=True,
                                         num_workers=config.num_workers, pin_memory=True) 
         
         val_data_set = VOC(root=config.path,                            #prendiamo il nostro dataset VOC e lo impostiamo come TRAIN
@@ -279,6 +279,9 @@ if __name__ == '__main__':
     parser.add_argument("--num_workers", type=int, default=4, help="num of threads for multithreading")
     parser.add_argument("--train_list", type=str, default="train_split_1.txt")
     parser.add_argument("--val_list", type=str, default="val_split_1.txt")
+    parser.add_argument("--from_new_class", type=int)
+    parser.add_argument("--to_new_class", type=int)
+    parser.add_argument("--lambda_distillation", type=float, default=0.0)
 
     # MISC
 
