@@ -11,11 +11,11 @@ class DownBlock(nn.Module):     #downBlock
         self.block = nn.Sequential(   #i moduli verranno aggiunti in modo sequenziale al modello
             nn.MaxPool2d(kernel_size=2, stride=2),      #MaxPool diminuiamo la dimensione, prendendo il valore max in una matrice 2x2. quindi la dimensione sara' di un quarto dell'originale ( penso)
             nn.Conv2d(in_dim, out_dim, kernel_size=3, stride=1, padding=1), #in_dim e' il numero di canali RGB, cioe' 3 . 
-            nn.ReLU(),  #elimininiamo i risultati negativi
-            #nn.BatchNorm2d(out_dim),  #batch normalization, sistemando media e varianza
+            nn.BatchNorm2d(out_dim),
+            nn.ReLU(inplace=True),  #batch normalization, sistemando media e varianza
             nn.Conv2d(out_dim, out_dim, kernel_size=3, stride=1, padding=1), #convoluzione da fine a fine
-            nn.ReLU())  #toglie i negativi
-            #nn.BatchNorm2d(out_dim))
+            nn.BatchNorm2d(out_dim),
+            nn.ReLU(inplace=True))  #toglie i negativi
 
     def forward(self, x):
         out = self.block(x)  
@@ -26,12 +26,14 @@ class UpBlock(nn.Module):  #upBlock
         super(UpBlock, self).__init__()  #inizializza il modulo interno
         self.block = nn.Sequential(   #i moduli verranno aggiunti in modo sequenziale al modello
             nn.Conv2d(in_dim, mid_dim, kernel_size=3, stride=1, padding=1),  #convolution da inizio a meta
-            nn.ReLU(),          #toglie i degativi
-            #nn.BatchNorm2d(mid_dim),         #normalizza la meta
+            nn.BatchNorm2d(mid_dim),         #normalizza la meta
+            nn.ReLU(inplace=True),          #toglie i degativi
             nn.Conv2d(mid_dim, mid_dim, kernel_size=3, stride=1, padding=1), #convoluzione da meta a meta 
-            nn.ReLU(),                  #toglie i negativi
-            #nn.BatchNorm2d(mid_dim),        #normalizza meta 
-            nn.ConvTranspose2d(mid_dim, out_dim, kernel_size=2, stride=2)) #convoluzione finale da meta a fine
+            nn.BatchNorm2d(mid_dim),        #normalizza meta
+            nn.ReLU(inplace=True),                  #toglie i negativi
+            nn.ConvTranspose2d(mid_dim, out_dim, kernel_size=2, stride=2),
+            nn.BatchNorm2d(out_dim),        #normalizza meta
+            nn.ReLU(inplace=True))
 
     def forward(self, x):
         out = self.block(x)
@@ -48,10 +50,11 @@ class UNet(nn.Module):
     def build_unet(self):
         self.enc1 = nn.Sequential(
             nn.Conv2d(self.in_dim, self.conv_dim, kernel_size=3, stride=1, padding=1),   # prima convoluzione
-            nn.ReLU(),                                  #toglie i negativi
-            #nn.BatchNorm2d(self.conv_dim),                  #normalizza media e varianza
+            nn.BatchNorm2d(self.conv_dim),                  #normalizza media e varianza
+            nn.ReLU(inplace=True),                                  #toglie i negativi
             nn.Conv2d(self.conv_dim, self.conv_dim, kernel_size=3, stride=1, padding=1), #seconda convoluzione
-            nn.ReLU())                                  #toglie i negativi
+            nn.BatchNorm2d(self.conv_dim),
+            nn.ReLU(inplace=True))                                  #toglie i negativi
             #nn.BatchNorm2d(self.conv_dim))              #normalizza media e varianza
         self.enc2 = DownBlock(self.conv_dim, self.conv_dim*2)  #va in giu, aumenta convoluzione a 128. input da 64, output a 128 
         self.enc3 = DownBlock(self.conv_dim*2, self.conv_dim*4) #va in giu, aumenta convoluzione a 256. input da 128, output a 256
@@ -64,11 +67,11 @@ class UNet(nn.Module):
 
         self.last = nn.Sequential(                          #i moduli verranno aggiunti in modo sequenziale al modello
             nn.Conv2d(self.conv_dim*2, self.conv_dim, kernel_size=3, stride=1, padding=1),      #conv da 128 a 64
-            nn.ReLU(),              #solo positivi
-            #nn.BatchNorm2d(self.conv_dim),  #normalizza media  e varianza
+            nn.BatchNorm2d(self.conv_dim),  #normalizza media  e varianza
+            nn.ReLU(inplace=True),              #solo positivi
             nn.Conv2d(self.conv_dim, self.conv_dim, kernel_size=3, stride=1, padding=1), #conv da 64 a 64
-            nn.ReLU(),                  #solo positivi
-            #nn.BatchNorm2d(self.conv_dim), #normalizza
+            nn.BatchNorm2d(self.conv_dim), #normalizza
+            nn.ReLU(inplace=True),                  #solo positivi
             nn.Conv2d(self.conv_dim, self.num_classes, kernel_size=1, stride=1)) #conv da 64 a 64
 
     def forward(self, x):

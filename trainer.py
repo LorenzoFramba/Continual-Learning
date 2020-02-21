@@ -311,7 +311,7 @@ class Trainer:
                     test = test_acc * 100,
                     time_epoch=elapsed, time_start=elapsed_start,
                     mean_iou=iou.mean(),
-                    mean_ca=class_acc.mean(),
+                    mean_ca=classes_acc.mean(),
                     loss=running_loss / print_number))
                 print("FINE TESTING")
             epoch +=1
@@ -389,3 +389,12 @@ class Trainer:
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr
         self.old_lr = lr
+
+    def print_results(self, results):
+        message = '(test epoch)'
+        for k, v in results.items():
+            if v != 0:
+                message += '%s: %.7f ' % (k, v)
+        print(message)
+        with open(self.log_name, "a") as log_file:
+            log_file.write('%s\n' % message)
