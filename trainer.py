@@ -225,6 +225,7 @@ class Trainer:
                     curr_loss = loss.item()                                         #ritorna il valore del tensore
                     running_loss += curr_loss                                       #average, DO NOT multiply by the batch size
                     output_label = torch.argmax(self.softmax(outputs), dim=1)       #argmax
+                    iou_mean = mt.intersectionAndUnion_torch(output_label, labels)
                     output_label = output_label.cpu()
                     labels = labels.cpu()
                     acc, pix = mt.accuracy(output_label, labels)
@@ -267,7 +268,7 @@ class Trainer:
                                 'Mean IOU : {mean:.4f}\t'
                                 'Mini Batch Loss : {loss:.4f}\t'.format(i=I, minibatch=iters_per_epoch,
                                 acc = acc_meter_mb.average()*100,
-                                iter=epoch, iters=self.cfg.n_iters + self.cfg.n_iters_decay, mean=iou.mean(),
+                                iter=epoch, iters=self.cfg.n_iters + self.cfg.n_iters_decay, mean=iou_mean,
                                 time=elapsed, loss=curr_loss))
             if epoch > self.cfg.n_iters:
                 if self.n_gpu > 0:
@@ -289,7 +290,7 @@ class Trainer:
             ########### eval phase  ###########
             if (epoch + 1) % self.cfg.test_step == 0:
                 print("TESTING")
-                test_acc, iou, confusion_matrix = self.test()
+                test_acc, iou, confusion_matrix, iou_mean = self.test()
                 seconds = time.time() - start_epoch                                 #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                 elapsed = str(timedelta(seconds=seconds))
                 seconds_from_beginning = time.time() - since
@@ -310,7 +311,7 @@ class Trainer:
                     iter=epoch, iters=self.cfg.n_iters + self.cfg.n_iters_decay,
                     test = test_acc * 100,
                     time_epoch=elapsed, time_start=elapsed_start,
-                    mean_iou=iou.mean(),
+                    mean_iou=iou_mean,
                     mean_ca=classes_acc.mean(),
                     loss=running_loss / print_number))
                 print("FINE TESTING")
@@ -344,6 +345,7 @@ class Trainer:
                     labels = Variable(labels.cuda())
                 outputs = self.model(images)
                 prediction = torch.argmax(self.softmax(outputs), dim=1)
+                iou_mean = mt.intersectionAndUnion_torch(prediction, labels)
                 prediction = prediction.cpu()
                 labels = labels.cpu()
                 acc, pix = mt.accuracy(prediction, labels)
@@ -381,7 +383,7 @@ class Trainer:
                                     normalize=True, range=(-1, 1), padding=100)
 
         iou = intersection_meter_test.sum / (union_meter_test.sum + 1e-10)
-        return acc_meter_test.average(), iou, class_acc_meter_test.confusion_matrix
+        return acc_meter_test.average(), iou, class_acc_meter_test.confusion_matrix, iou_mean
 
     def update_learning_rate(self):
         lrd = self.cfg.lr / self.cfg.n_iters_decay
