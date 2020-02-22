@@ -249,8 +249,8 @@ class Trainer:
                     elif self.cfg.step == 'default':
                         path=self.cfg.sample_save_path +"/samples_default_training"
 
-                    tv.utils.save_image(to_rgb(output_label),os.path.join(path,"generated",f"predicted_{epoch}_{I}.jpg"), padding=100)
-                    tv.utils.save_image(to_rgb(labels),os.path.join(path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"), padding=100)
+                    tv.utils.save_image(to_rgb(output_label),os.path.join(path,"generated",f"predicted_{epoch}_{I}.jpg"), padding=100, normalize=True, range=(0,255))
+                    tv.utils.save_image(to_rgb(labels),os.path.join(path,"ground_truth",f"ground_truth_{epoch}_{I}.jpg"), padding=100, normalize=True, range=(0,255))
                     tv.utils.save_image(inputs.cpu(),os.path.join(path,"inputs",f"input_{epoch}_{I}.jpg"),normalize=True, range=(-1,1), padding=100)
 
                     seconds = time.time() - start_mini_batch        
