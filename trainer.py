@@ -214,7 +214,7 @@ class Trainer:
                 loss = loss + (self.cfg.lambda_distillation * loss_distillation)
                 loss.backward()
                 self.optim.step()
-                if I % 100 == 0:
+                if I % 200 == 0:
                     print_number += 1
                     acc_meter_mb = AverageMeter()
                     intersection_meter_mb = AverageMeter()
@@ -337,6 +337,7 @@ class Trainer:
         union_meter_test = AverageMeter()
         class_acc_meter_test = AverageMeter()
         class_acc_meter_test.initialize(0,0, 21)
+        iou_mean = 0
         with torch.no_grad():
             self.model.eval()
             for i, (images, labels) in enumerate(self.val_data_loader):
@@ -345,7 +346,7 @@ class Trainer:
                     labels = Variable(labels.cuda())
                 outputs = self.model(images)
                 prediction = torch.argmax(self.softmax(outputs), dim=1)
-                iou_mean = mt.intersectionAndUnion_torch(prediction, labels)
+                iou_mean += mt.intersectionAndUnion_torch(prediction, labels)
                 prediction = prediction.cpu()
                 labels = labels.cpu()
                 acc, pix = mt.accuracy(prediction, labels)
