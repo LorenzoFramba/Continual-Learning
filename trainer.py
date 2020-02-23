@@ -374,11 +374,11 @@ class Trainer:
                 tv.utils.save_image(to_rgb(prediction),
                                     os.path.join(path, "generated",
                                                  f"predicted_testing_{i}.jpg"),
-                                    padding=100)
+                                    padding=100, normalize=True, range=(0,255))
                 tv.utils.save_image(to_rgb(labels),
                                     os.path.join(path, "ground_truth",
                                                  f"ground_truth_testing_{i}.jpg"),
-                                    padding=100)
+                                    padding=100, normalize=True, range=(0,255))
                 tv.utils.save_image(images.cpu(), os.path.join(path, "inputs",
                                                                f"input_testing_{i}.jpg"),
                                     normalize=True, range=(-1, 1), padding=100)
