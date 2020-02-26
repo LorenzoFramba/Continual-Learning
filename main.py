@@ -25,7 +25,7 @@ def get_loader(config, shuffle=True):
                 transforms.Pad(10),                                     #crea un paddig
                 transforms.CenterCrop((config.h_image_size, config.w_image_size)),      #fa crop al centro, ma di quanto??
                 transforms.ToTensor(),                                  #trasforma l'immagine in tensor ( con C x H x W, cioe Channels, Height and Width)
-                transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))  #normalizza il tensor nella media e deviazione standard
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  #normalizza il tensor nella media e deviazione standard
         ])
         train_list= ""
         val_list= ""
