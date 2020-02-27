@@ -338,12 +338,10 @@ class Trainer:
 
     ########### eval phase ###########
     def test(self):
-        acc_meter_test = AverageMeter()
-        intersection_meter_test = AverageMeter()
-        union_meter_test = AverageMeter()
         class_acc_meter_test = AverageMeter()
         class_acc_meter_test.initialize(0,0, 21)
-        iou_mean = 0
+        labels_test = []
+        predictions_test = []
         with torch.no_grad():
             self.model.eval()
             for i, (images, labels) in enumerate(self.val_data_loader):
@@ -352,23 +350,8 @@ class Trainer:
                     labels = Variable(labels.cuda())
                 outputs = self.model(images)
                 prediction = torch.argmax(self.softmax(outputs), dim=1)
-                iou_mean += mt.intersectionAndUnion_torch(prediction, labels)
-                prediction = prediction.cpu()
-                labels = labels.cpu()
-                acc, pix = mt.accuracy(prediction, labels)
-                intersection, union = \
-                    mt.intersectionAndUnion(prediction, labels,
-                                            21)
-                acc_meter_test.update(acc, pix)
-                intersection_meter_test.update(intersection)
-                union_meter_test.update(union)
-                confusion_matrix_epoch = mt.class_accuracy(
-                    prediction,
-                    labels,
-                    class_acc_meter_test.get_confusion_matrix(),
-                    labels=range(0,21))
-                class_acc_meter_test.update_confusion_matrix(
-                    confusion_matrix_epoch)
+                labels_test.extend(outputs)
+                predictions_test.extend(prediction)
                 path = self.cfg.sample_save_path
                 if self.cfg.step == 'split_1':
                     path = self.cfg.sample_save_path + "/samples_split1_testing"
@@ -388,9 +371,21 @@ class Trainer:
                 tv.utils.save_image(images.cpu(), os.path.join(path, "inputs",
                                                                f"input_testing_{i}.jpg"),
                                     normalize=True, range=(-1, 1), padding=100)
-
-        iou = intersection_meter_test.sum / (union_meter_test.sum + 1e-10)
-        return acc_meter_test.average(), iou, class_acc_meter_test.confusion_matrix, iou_mean
+            predictions_test = torch.stack(predictions_test, dim=0)
+            labels_test = torch.stack(labels_test, dim=0)
+            iou_mean = mt.intersectionAndUnion_torch(predictions_test, labels_test)
+            prediction = predictions_test.cpu()
+            labels = labels_test.cpu()
+            acc, pix = mt.accuracy(prediction, labels)
+            intersection, union = mt.intersectionAndUnion(prediction, labels,
+                                            21)
+            confusion_matrix_test = mt.class_accuracy(
+                    prediction,
+                    labels,
+                    class_acc_meter_test.get_confusion_matrix(),
+                    labels=range(0,21))
+        iou = intersection / (union + 1e-10)
+        return acc, iou, confusion_matrix_test, iou_mean
 
     def update_learning_rate(self):
         lrd = self.cfg.lr / self.cfg.n_iters_decay
