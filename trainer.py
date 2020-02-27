@@ -134,7 +134,7 @@ class Trainer:
     ########### model builder ###########
     def build_model(self):
         
-        self.model = unet_old.UNet(num_classes=21, in_dim=3, conv_dim=64)
+        self.model = unet.UNetWithResnet50Encoder(num_classes=21)
         self.optim = optim.Adam(self.model.parameters(),
                                 lr=self.cfg.lr,
                                 betas=[self.cfg.beta1, self.cfg.beta2])
