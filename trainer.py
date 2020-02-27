@@ -360,11 +360,11 @@ class Trainer:
                 elif self.cfg.step == 'default':
                     path = self.cfg.sample_save_path + "/samples_default_testing"
 
-                tv.utils.save_image(to_rgb(prediction),
+                tv.utils.save_image(to_rgb(prediction.cpu()),
                                     os.path.join(path, "generated",
                                                  f"predicted_testing_{i}.jpg"),
                                     padding=100, normalize=True, range=(0,255))
-                tv.utils.save_image(to_rgb(labels),
+                tv.utils.save_image(to_rgb(labels.cpu()),
                                     os.path.join(path, "ground_truth",
                                                  f"ground_truth_testing_{i}.jpg"),
                                     padding=100, normalize=True, range=(0,255))
