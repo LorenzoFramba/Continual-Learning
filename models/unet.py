@@ -1,100 +1,130 @@
+import torchvision
+from torch import nn
 import torch
-import torch.nn as nn
 
-'''
-Append padding to keep concat size & input-output size
-'''
 
-class DownBlock(nn.Module):     #downBlock
-    def __init__(self, in_dim, out_dim):
-        super(DownBlock, self).__init__()
-        self.block = nn.Sequential(   #i moduli verranno aggiunti in modo sequenziale al modello
-            nn.MaxPool2d(kernel_size=2, stride=2),      #MaxPool diminuiamo la dimensione, prendendo il valore max in una matrice 2x2. quindi la dimensione sara' di un quarto dell'originale ( penso)
-            nn.Conv2d(in_dim, out_dim, kernel_size=3, stride=1, padding=1), #in_dim e' il numero di canali RGB, cioe' 3 . 
-            nn.BatchNorm2d(out_dim),
-            nn.ReLU(inplace=True),  #batch normalization, sistemando media e varianza
-            nn.Conv2d(out_dim, out_dim, kernel_size=3, stride=1, padding=1), #convoluzione da fine a fine
-            nn.BatchNorm2d(out_dim),
-            nn.ReLU(inplace=True))  #toglie i negativi
+class ConvBlock(nn.Module):
+    """
+    Helper module that consists of a Conv -> BN -> ReLU
+    """
+
+    def __init__(self, in_channels, out_channels, padding=1, kernel_size=3, stride=1, with_nonlinearity=True):
+        super().__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, padding=padding, kernel_size=kernel_size, stride=stride)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU()
+        self.with_nonlinearity = with_nonlinearity
 
     def forward(self, x):
-        out = self.block(x)  
-        return out
+        x = self.conv(x)
+        x = self.bn(x)
+        if self.with_nonlinearity:
+            x = self.relu(x)
+        return x
 
-class UpBlock(nn.Module):  #upBlock
-    def __init__(self, in_dim, mid_dim, out_dim):
-        super(UpBlock, self).__init__()  #inizializza il modulo interno
-        self.block = nn.Sequential(   #i moduli verranno aggiunti in modo sequenziale al modello
-            nn.Conv2d(in_dim, mid_dim, kernel_size=3, stride=1, padding=1),  #convolution da inizio a meta
-            nn.BatchNorm2d(mid_dim),         #normalizza la meta
-            nn.ReLU(inplace=True),          #toglie i degativi
-            nn.Conv2d(mid_dim, mid_dim, kernel_size=3, stride=1, padding=1), #convoluzione da meta a meta 
-            nn.BatchNorm2d(mid_dim),        #normalizza meta
-            nn.ReLU(inplace=True),                  #toglie i negativi
-            nn.ConvTranspose2d(mid_dim, out_dim, kernel_size=2, stride=2),
-            nn.BatchNorm2d(out_dim),        #normalizza meta
-            nn.ReLU(inplace=True))
 
-    def forward(self, x):
-        out = self.block(x)
-        return out
+class Bridge(nn.Module):
+    """
+    This is the middle layer of the UNet which just consists of some
+    """
 
-class UNet(nn.Module):
-    def __init__(self, num_classes, in_dim=3, conv_dim=64):
-        super(UNet, self).__init__()
-        self.num_classes = num_classes
-        self.in_dim = in_dim
-        self.conv_dim = conv_dim
-        self.build_unet()
-
-    def build_unet(self):
-        self.enc1 = nn.Sequential(
-            nn.Conv2d(self.in_dim, self.conv_dim, kernel_size=3, stride=1, padding=1),   # prima convoluzione
-            nn.BatchNorm2d(self.conv_dim),                  #normalizza media e varianza
-            nn.ReLU(inplace=True),                                  #toglie i negativi
-            nn.Conv2d(self.conv_dim, self.conv_dim, kernel_size=3, stride=1, padding=1), #seconda convoluzione
-            nn.BatchNorm2d(self.conv_dim),
-            nn.ReLU(inplace=True))                                  #toglie i negativi
-            #nn.BatchNorm2d(self.conv_dim))              #normalizza media e varianza
-        self.enc2 = DownBlock(self.conv_dim, self.conv_dim*2)  #va in giu, aumenta convoluzione a 128. input da 64, output a 128 
-        self.enc3 = DownBlock(self.conv_dim*2, self.conv_dim*4) #va in giu, aumenta convoluzione a 256. input da 128, output a 256
-        self.enc4 = DownBlock(self.conv_dim*4, self.conv_dim*8) #va in giu, aumenta convoluzione a 512. input da 256, output a 512
-
-        self.dec1 = UpBlock(self.conv_dim*8, self.conv_dim*16, self.conv_dim*8)    #torna in su da 512 a 1024 a 512
-        self.dec2 = UpBlock(self.conv_dim*16, self.conv_dim*8, self.conv_dim*4) #torna in su da da 1024 512 a 256
-        self.dec3 = UpBlock(self.conv_dim*8, self.conv_dim*4, self.conv_dim*2)  #torna in su da 512 a  256 a 128
-        self.dec4 = UpBlock(self.conv_dim*4, self.conv_dim*2, self.conv_dim)    #torna in su da 256 a 128 a 64
-
-        self.last = nn.Sequential(                          #i moduli verranno aggiunti in modo sequenziale al modello
-            nn.Conv2d(self.conv_dim*2, self.conv_dim, kernel_size=3, stride=1, padding=1),      #conv da 128 a 64
-            nn.BatchNorm2d(self.conv_dim),  #normalizza media  e varianza
-            nn.ReLU(inplace=True),              #solo positivi
-            nn.Conv2d(self.conv_dim, self.conv_dim, kernel_size=3, stride=1, padding=1), #conv da 64 a 64
-            nn.BatchNorm2d(self.conv_dim), #normalizza
-            nn.ReLU(inplace=True),                  #solo positivi
-            nn.Conv2d(self.conv_dim, self.num_classes, kernel_size=1, stride=1)) #conv da 64 a 64
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.bridge = nn.Sequential(
+            ConvBlock(in_channels, out_channels),
+            ConvBlock(out_channels, out_channels)
+        )
 
     def forward(self, x):
-        enc1 = self.enc1(x) # 16
-        enc2 = self.enc2(enc1) # 8
-        enc3 = self.enc3(enc2) # 4
-        enc4 = self.enc4(enc3) # 2
+        return self.bridge(x)
 
-        center = nn.MaxPool2d(kernel_size=2, stride=2)(enc4)
 
-        dec1 = self.dec1(center) # 4
-        dec2 = self.dec2(torch.cat([enc4, dec1], dim=1))
-        dec3 = self.dec3(torch.cat([enc3, dec2], dim=1))
-        dec4 = self.dec4(torch.cat([enc2, dec3], dim=1))
+class UpBlockForUNetWithResNet50(nn.Module):
+    """
+    Up block that encapsulates one up-sampling step which consists of Upsample -> ConvBlock -> ConvBlock
+    """
 
-        last = self.last(torch.cat([enc1, dec4], dim=1))
-        assert x.size(-1) == last.size(-1), 'input size(W)-{} mismatches with output size(W)-{}' \
-                                            .format(x.size(-1), output.size(-1))
-        assert x.size(-2) == last.size(-2), 'input size(H)-{} mismatches with output size(H)-{}' \
-                                            .format(x.size(-1), output.size(-1))
-        return last
+    def __init__(self, in_channels, out_channels, up_conv_in_channels=None, up_conv_out_channels=None,
+                 upsampling_method="conv_transpose"):
+        super().__init__()
 
-if __name__ == '__main__':
-    sample = torch.randn((2, 3, 32, 32))
-    model = UNet(num_classes=2)
-    print(model(sample).size())
+        if up_conv_in_channels == None:
+            up_conv_in_channels = in_channels
+        if up_conv_out_channels == None:
+            up_conv_out_channels = out_channels
+
+        if upsampling_method == "conv_transpose":
+            self.upsample = nn.ConvTranspose2d(up_conv_in_channels, up_conv_out_channels, kernel_size=2, stride=2)
+        elif upsampling_method == "bilinear":
+            self.upsample = nn.Sequential(
+                nn.Upsample(mode='bilinear', scale_factor=2),
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1)
+            )
+        self.conv_block_1 = ConvBlock(in_channels, out_channels)
+        self.conv_block_2 = ConvBlock(out_channels, out_channels)
+
+    def forward(self, up_x, down_x):
+        """
+        :param up_x: this is the output from the previous up block
+        :param down_x: this is the output from the down block
+        :return: upsampled feature map
+        """
+        x = self.upsample(up_x)
+        x = torch.cat([x, down_x], 1)
+        x = self.conv_block_1(x)
+        x = self.conv_block_2(x)
+        return x
+
+
+class UNetWithResnet50Encoder(nn.Module):
+    DEPTH = 6
+
+    def __init__(self, num_classes=2):
+        super().__init__()
+        resnet = torchvision.models.resnet.resnet50(pretrained=True)
+        down_blocks = []
+        up_blocks = []
+        self.input_block = nn.Sequential(*list(resnet.children()))[:3]
+        self.input_pool = list(resnet.children())[3]
+        for bottleneck in list(resnet.children()):
+            if isinstance(bottleneck, nn.Sequential):
+                down_blocks.append(bottleneck)
+        self.down_blocks = nn.ModuleList(down_blocks)
+        self.bridge = Bridge(2048, 2048)
+        up_blocks.append(UpBlockForUNetWithResNet50(2048, 1024))
+        up_blocks.append(UpBlockForUNetWithResNet50(1024, 512))
+        up_blocks.append(UpBlockForUNetWithResNet50(512, 256))
+        up_blocks.append(UpBlockForUNetWithResNet50(in_channels=128 + 64, out_channels=128,
+                                                    up_conv_in_channels=256, up_conv_out_channels=128))
+        up_blocks.append(UpBlockForUNetWithResNet50(in_channels=64 + 3, out_channels=64,
+                                                    up_conv_in_channels=128, up_conv_out_channels=64))
+
+        self.up_blocks = nn.ModuleList(up_blocks)
+
+        self.out = nn.Conv2d(64, num_classes, kernel_size=1, stride=1)
+
+    def forward(self, x, with_output_feature_map=False):
+        pre_pools = dict()
+        pre_pools[f"layer_0"] = x
+        x = self.input_block(x)
+        pre_pools[f"layer_1"] = x
+        x = self.input_pool(x)
+
+        for i, block in enumerate(self.down_blocks, 2):
+            x = block(x)
+            if i == (UNetWithResnet50Encoder.DEPTH - 1):
+                continue
+            pre_pools[f"layer_{i}"] = x
+
+        x = self.bridge(x)
+
+        for i, block in enumerate(self.up_blocks, 1):
+            key = f"layer_{UNetWithResnet50Encoder.DEPTH - 1 - i}"
+            x = block(x, pre_pools[key])
+        output_feature_map = x
+        x = self.out(x)
+        del pre_pools
+        if with_output_feature_map:
+            return x, output_feature_map
+        else:
+            return x

@@ -134,7 +134,7 @@ class Trainer:
     ########### model builder ###########
     def build_model(self):
         
-        self.model = unet.UNet(num_classes=21, in_dim=3, conv_dim=64)
+        self.model = unet_old.UNet(num_classes=21, in_dim=3, conv_dim=64)
         self.optim = optim.Adam(self.model.parameters(),
                                 lr=self.cfg.lr,
                                 betas=[self.cfg.beta1, self.cfg.beta2])
@@ -164,7 +164,7 @@ class Trainer:
                     np.array(
                         [True if i < self.cfg.from_new_class else False for i in range(0,21)] * self.cfg.train_batch_size * 1 * self.cfg.h_image_size * self.cfg.w_image_size)).view(self.cfg.train_batch_size, -1, self.cfg.h_image_size, self.cfg.w_image_size)
 
-            self.old_model = unet.UNet(num_classes=21, in_dim=3, conv_dim=64)
+            self.old_model = unet.UNetWithResnet50Encoder(num_classes=21)
 
             self.load_network(self.old_model, "UNET_VOC", "latest", False)
             if self.n_gpu > 0:
