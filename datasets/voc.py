@@ -127,14 +127,18 @@ class VOC(data.Dataset):
         self.target_transform = target_transform
 
     def __getitem__(self, i):
+        flip = False
         if self.dataset_type == 'train':            #se l'elemento del vettore e' train
             name = self.train_items[i]              #name e' l'elemento corrispondente all'index
         elif self.dataset_type == 'val':
             name = self.val_items[i]
-
+        if np.random.uniform() < 0.5 and self.dataset_type == "train":
+            flip = True
         image = Image.open(name[0]).convert('RGB')  #image
         mask = Image.open(name[1])
-
+        if flip:
+            image = image.transpose(Image.FLIP_LEFT_RIGHT)
+            mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
         if self.transform:
             image = self.transform(image)
 

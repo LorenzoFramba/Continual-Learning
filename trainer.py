@@ -166,7 +166,7 @@ class Trainer:
 
             self.old_model = unet.UNetWithResnet50Encoder(num_classes=21)
 
-            self.load_network(self.old_model, "UNET_VOC", "latest", False)
+            self.load_network(self.old_model, "UNET_VOC", self.cfg.which_epoch, False)
             if self.n_gpu > 0:
                 print('Use data parallel model(# gpu: {})'.format(self.n_gpu))
                 self.old_model.cuda()
