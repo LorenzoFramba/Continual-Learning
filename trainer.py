@@ -219,11 +219,11 @@ class Trainer:
 
                 loss = loss + (self.cfg.lambda_distillation * loss_distillation)
 
-                f = open('loss.txt', 'a')
+                f = open('loss.csv', 'a')
                 f.write(str(loss.item())+"\n")
                 f.close()
 
-                
+
                 loss.backward()
 
 
