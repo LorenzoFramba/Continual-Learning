@@ -218,7 +218,15 @@ class Trainer:
 
 
                 loss = loss + (self.cfg.lambda_distillation * loss_distillation)
+
+                f = open('loss.txt', 'a')
+                f.write(str(loss.item())+"\n")
+                f.close()
+
+                
                 loss.backward()
+
+
                 self.optim.step()
                 if I % 200 == 0:
                     print_number += 1
