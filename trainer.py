@@ -174,8 +174,21 @@ class Trainer:
                 for param in self.old_model.parameters():
                     param.requires_grad = False
 
-
-    ########### trainer phase ###########
+    def distill(self, inputs, labels, outputs, criterion):
+        print("Training ... ")
+        distill_losses = []
+        ce_losses = []
+        T = 2
+        alpha = (1)/ 21
+        print("classification proportion 1-alpha = ", 1-alpha)
+        with torch.no_grad():
+            pre_p = self.old_model(inputs)
+            pre_p = self.softmax(pre_p[:,:self.cfg.from_new_class]/T)
+        logp = self.log_softmax(outputs[:,:self.cfg.from_new_class]/T)
+        loss_soft_target = -torch.mean(torch.sum(pre_p * logp, dim=1))
+        loss_hard_target = criterion(outputs, labels)
+        loss = loss_soft_target * T * T + (1-alpha) * loss_hard_target
+        return loss
     def train_val(self):
 
         since = time.time()
@@ -212,13 +225,10 @@ class Trainer:
                 loss = self.c_loss(outputs, labels)
                 loss_distillation = 0
                 if self.cfg.lambda_distillation != 0.0:
-                    outputs_old = self.old_model(inputs)
-                    loss_distillation = self.distillation_loss(self.log_softmax(outputs), self.softmax(outputs_old))
-                    loss_distillation = loss_distillation[self.mask]
-                    loss_distillation = loss_distillation.mean()
-
-
-                loss = loss + (self.cfg.lambda_distillation * loss_distillation)
+                    loss = self.distill(inputs, labels, outputs, self.c_loss)
+                else:
+                    loss = self.c_loss(outputs, labels)
+                    loss_distillation = 0
 
                 f = open('loss.csv', 'a')
                 f.write(str(loss.item())+"\n")
