@@ -114,7 +114,6 @@ class Trainer:
             path = self.cfg.model_save_path + "/models_split1"
             save_dir = path
             save_path = os.path.join(save_dir, save_filename)
-            load_optim = False
 
         if not os.path.isfile(save_path):                                               #se non si trova nel path
             print('%s not exists yet!' % save_path)                                     #diciamo che non esiste! 
