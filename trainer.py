@@ -166,11 +166,12 @@ class Trainer:
 
             self.old_model = unet.UNetWithResnet50Encoder(num_classes=21)
 
-            self.load_network(self.old_model, "UNET_VOC", self.cfg.which_epoch, False)
+            self.load_network(self.old_model, "UNET_VOC", self.cfg.which_epoch, True)
             if self.n_gpu > 0:
                 print('Use data parallel model(# gpu: {})'.format(self.n_gpu))
                 self.old_model.cuda()
                 self.old_model = nn.DataParallel(self.old_model)
+                self.old_model.eval()
                 for param in self.old_model.parameters():
                     param.requires_grad = False
 
@@ -189,6 +190,7 @@ class Trainer:
 
         ########### train until model is fully trained  ###########
         while epoch < self.cfg.n_iters + self.cfg.n_iters_decay:
+            self.model.train()
             print('Epoch {}/{}'.format(epoch, self.cfg.n_iters + self.cfg.n_iters_decay))
             print('-' * 10)
             running_loss = 0.0
@@ -304,7 +306,9 @@ class Trainer:
             ########### eval phase  ###########
             if (epoch + 1) % self.cfg.test_step == 0:
                 print("TESTING")
+                self.model.eval()
                 test_acc, iou, confusion_matrix, iou_mean = self.test()
+                self.model.train()
                 seconds = time.time() - start_epoch                                 #secondi sono uguali al tempo trascorso meno quello di training, cioe' quanto tempo ci ha messo a fare il training
                 elapsed = str(timedelta(seconds=seconds))
                 seconds_from_beginning = time.time() - since
