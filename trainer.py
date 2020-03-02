@@ -175,12 +175,8 @@ class Trainer:
                     param.requires_grad = False
 
     def distill(self, inputs, labels, outputs, criterion):
-        print("Training ... ")
-        distill_losses = []
-        ce_losses = []
         T = 2
-        alpha = (1)/ 21
-        print("classification proportion 1-alpha = ", 1-alpha)
+        alpha = (20)/ 21
         with torch.no_grad():
             pre_p = self.old_model(inputs)
             pre_p = self.softmax(pre_p[:,:self.cfg.from_new_class]/T)
