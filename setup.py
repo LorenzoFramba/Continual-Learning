@@ -4,7 +4,7 @@ setup(
     version='1.0',
     description='nsml',
     install_requires=[
-        'torch==0.4.1',
+        'torch==2.2.0',
         'visdom',
         'numpy'
     ]
